@@ -763,7 +763,7 @@ function courseMapView(){
   <p class="note" style="margin:0 0 4px">スタートから一本道。⭐は正答数（10問中7・9以上で増）。</p>
   ${blocks}
   <div class="cgoal">🏆<div>ゴール ・ 合格！</div></div>
-  <div class="footer-note">自由に解きたいときは「問題」タブへ。受験手続きは<a href="#" onclick="S.view='roadmap';render();return false" style="color:var(--primary-ink);font-weight:700">ロードマップ</a>で確認できます。</div>`;
+  <div class="footer-note">自由に解きたいときは「問題」タブへ。受験の手続きは「記録」タブの<a href="#" onclick="S.view='roadmap';render();return false" style="color:var(--primary-ink);font-weight:700">受験の準備</a>で確認できます。</div>`;
 }
 
 // ---------- 用語集ページ ----------
@@ -771,6 +771,7 @@ let glossFilter={q:"",cat:""};
 const GCATS = [...new Set(Object.values(GLOSSARY).map(g=>g.cat))];
 function glossaryView(){
   return `
+  <button class="back" onclick="S.view='practice';render()">← 問題へ</button>
   <header class="top"><h1>📚 用語集</h1><div class="days">全<b>${Object.keys(GLOSSARY).length}</b>語</div></header>
   <div class="card">
     <input class="glosssearch" id="glossq" placeholder="用語・読みで検索…" value="${esc(glossFilter.q)}" oninput="glossFilter.q=this.value;renderGlossList()">
@@ -931,11 +932,11 @@ function render(){
   window.scrollTo(0,0);
   if(v==="coursemap"&&S.scrollWorld!=null){ const el=document.getElementById("cw-"+S.scrollWorld); if(el) setTimeout(()=>el.scrollIntoView({block:"start"}),0); S.scrollWorld=null; }
 }
-const TABS=[["home","🏠","ホーム"],["practice","✏️","問題"],["glossary","📚","用語"],["course","🗺","コース"]];
+const TABS=[["home","🏠","ホーム"],["course","🗺","コース"],["practice","✏️","問題"],["journey","📊","記録"]];
 function currentTab(){ const v=S.view;
-  if(v==="glossary")return "glossary";
-  if(v==="course"||v==="coursemap"||v==="roadmap")return "course";
-  if(v==="practice"||v==="quiz"||v==="examResult"||v==="cards"||v==="cardPick"||v==="tech"||v==="notebook"||v==="storylib"||v==="story")return "practice";
+  if(v==="course"||v==="coursemap")return "course";
+  if(v==="journey"||v==="records"||v==="stats"||v==="roadmap")return "journey";
+  if(v==="practice"||v==="quiz"||v==="examResult"||v==="cards"||v==="cardPick"||v==="tech"||v==="notebook"||v==="storylib"||v==="story"||v==="glossary")return "practice";
   return "home"; }
 function tabGo(t){ clearInterval(timerHandle); S.session=null; S.cardSession=null; S.view=t; render(); }
 function renderTabbar(){
@@ -971,8 +972,9 @@ function homeView(){
   const paceIcon=paceCls==="good"?"🟢":paceCls==="mid"?"🟡":"🔴";
   const paceLabel=unseen===0?"全問カバー済み":perDay<=5?"順調なペース":perDay<=12?"少し巻きたい":"ペースアップを";
   const covPct=Math.round(answered/ALL.length*100);
-  const rmi=nextMileIdx(); const rmCur=rmi<0?null:MILES[rmi]; const rmNext=(rmi>=0&&rmi+1<MILES.length)?MILES[rmi+1]:null;
-  const rmNextHtml = rmNext?`⏭ <b>次:</b> ${esc(rmNext.label)}`:(rmCur?`⏭ <b>次:</b> 本番で合格 🏆`:"");
+  const _csecs=courseSections(); const _cflat=[]; _csecs.forEach(s=>s.nodes.forEach(n=>_cflat.push(Object.assign({wname:s.name},n))));
+  const _cci=_cflat.findIndex(n=>n.current); const _ccur=_cci>=0?_cflat[_cci]:null;
+  const _cdone=_cflat.filter(n=>n.done).length, _ctot=_cflat.length, _cpct=Math.round(_cdone/_ctot*100);
   return `
   <header class="top"><h1>合格エンジン</h1><div class="days">本番 ${examDateStr()}<br>あと<b>${daysToExam()}</b>日</div></header>
   <div class="greet">${greet}。<br><span>今日も一歩ずつ。</span></div>
@@ -988,12 +990,12 @@ function homeView(){
     <div class="bar" style="margin-top:11px"><i style="width:${covPct}%"></i></div>
     <div class="pacesub">全体カバー ${answered}/${ALL.length}問（${covPct}%）・ 今日 ${todayDone}問${unseen>0?(todayDone>=perDay?" ✓ ノルマ達成！":`（あと${Math.max(0,perDay-todayDone)}問）`):""}</div>
   </div>
-  <div class="card" onclick="S.view='roadmap';render()" style="cursor:pointer">
-    <div class="eyebrow">合格ロードマップ</div>
-    ${phaseHtml()}
-    <div class="rmnow">📍 <b>今:</b> ${rmCur?esc(rmCur.label):"全ステップ完了 🎉"}</div>
-    ${rmNextHtml?`<div class="rmnext">${rmNextHtml}</div>`:""}
-    <div class="note" style="margin-top:10px">タップで全ロードマップを見る →</div>
+  <div class="card" onclick="S.view='course';render()" style="cursor:pointer">
+    <div class="eyebrow">冒険コース ・ 学習の道</div>
+    <div class="rmnow">📍 <b>${_ccur?esc(_ccur.wname):"ゴール 🏆"}</b></div>
+    <div class="rmnext">${_ccur?`いま：${esc(_ccur.label)}`:"全ステージ制覇！おめでとう"}</div>
+    <div class="bar" style="margin-top:11px"><i style="width:${_cpct}%"></i></div>
+    <div class="note" style="margin-top:8px">${_cdone}/${_ctot} クリア ・ タップでコースを開く →</div>
   </div>
   <div class="statrow">
     <div class="stat"><div class="v">${streak()}<span style="font-size:12px">日</span></div><div class="l">連続 🔥${freezes>0?` ・❄️${freezes}`:""}</div></div>
@@ -1013,8 +1015,6 @@ function homeView(){
     </div>
     ${scoreTrendSvg(false)?`<div class="trend">${scoreTrendSvg(false)}<div class="trendcap">予想得点の推移（直近${Math.min(30,Object.keys(scoreHist).length)}回）</div></div>`:""}
   </div>
-  <button class="row" onclick="S.view='practice';render()"><div class="ic">✏️</div><div class="tx"><b>問題を解く</b><span>分野別・論点別・本番モード（50問）</span></div><div class="chev">›</div></button>
-  <button class="row" onclick="S.view='journey';render()"><div class="ic g">📊</div><div class="tx"><b>実績・データ</b><span>カレンダー・模試履歴・分野別の正答率・バックアップ</span></div><div class="chev">›</div></button>
   <div class="footer-note">出典: 日本貸金業協会 公式過去問 第16〜20回＋AI予想模試50問。解説・暗記カードはAI生成です。</div>`;
 }
 
@@ -1037,7 +1037,7 @@ function practiceView(){
   <div class="card"><h2>本番モード（50問・120分・採点つき）</h2>
     <div class="grid2">${DATA.exams.map(e=>`<button class="btn ghost" onclick="startExam(${e.exam})">第${e.exam}回（${e.year}）${examBadge(e.exam)}</button>`).join("")}</div>
   </div>
-  <button class="row" onclick="S.view='storylib';render()"><div class="ic p">📚</div><div class="tx"><b>物語で学ぶ（全6話）</b><span>論点を物語でやさしく理解・用語は点線タップ</span></div><div class="chev">›</div></button>
+  <button class="row" onclick="S.view='storylib';render()"><div class="ic p">📚</div><div class="tx"><b>物語で学ぶ（全${STORIES.length}話）</b><span>論点を物語でやさしく理解・用語は点線タップ</span></div><div class="chev">›</div></button>
   <button class="row" onclick="S.view='notebook';render()"><div class="ic w">📕</div><div class="tx"><b>間違いノート</b><span>${mistakeList().length}問のニガテを集中復習・「覚えた」で卒業</span></div><div class="chev">›</div></button>
   <button class="row" onclick="S.view='cardPick';render()"><div class="ic p">🧠</div><div class="tx"><b>暗記カード</b><span>全${CARDS.length}枚・○×で論点の要点を高速固め</span></div><div class="chev">›</div></button>
   <button class="row" onclick="S.view='tech';render()"><div class="ic g">🎓</div><div class="tx"><b>解法テクニック</b><span>4択の絞り込み方・時間配分・ひっかけ対策</span></div><div class="chev">›</div></button>
@@ -1243,14 +1243,9 @@ function statsView(){
 }
 
 // ---------- journey (マイページ) ----------
+// 受験手続き（学習の進捗はコースで管理。ここは日付のある行動タスクのみ）
 const MILES=[
- {id:"intro",label:"物語で全体像をつかむ（約3分・全6章）",due:"2026-08-01",desc:"「貸金業ってなに？」をやさしく予習。ここから合格の旅がはじまります",read:true,openFn:"startIntro()",auto:()=>!!store.get("introRead",false)},
- {id:"strategy",label:"必勝法を身につける（例題つき・全6章）",due:"2026-08-05",desc:"受かるための解き方のコツ。先に知っておくほど得します",read:true,openFn:"startStrategy()",auto:()=>!!store.get("strategyRead",false)},
  {id:"apply",label:"受験申込をする",due:"2026-09-10",desc:"ネット申込は9/10 17:00締切。会社の団体申込の有無も総務に確認",link:"https://www.j-fsa.or.jp/chief/qualifying_exam/"},
- {id:"basics",label:"暗記カードで全分野を1周する",due:"2026-08-15",desc:"まずは○×カードで全体像をつかむ。この段階は理解が浅くてOK",auto:()=>CARDS.length>0&&CARDS.every(c=>chist[c.id]&&chist[c.id].a>0)},
- {id:"phase1",label:"Phase1完了: 4分野すべてを一度は演習する",due:"2026-08-31",desc:"分野別演習とやさしい解説で、まず全範囲に触れる",auto:()=>{const cs=catStats();return CATS.every(c=>cs[c].seen>=5);}},
- {id:"phase2",label:"Phase2完了: 過去問5年分を3周する",due:"2026-10-18",desc:"間違えた問題はやさしい解説を読み、理由を1行で言えるまで",auto:()=>{const off=ALL.filter(q=>q.exam>=16&&q.exam<=20);const a=off.reduce((s,q)=>s+((hist[q.id]&&hist[q.id].a)||0),0);return off.length>0&&a>=off.length*3;}},
- {id:"goal35",label:"本番モードで35点以上を取る",due:"2026-11-01",desc:"本番モードで35点を取ると自動で達成になります",auto:()=>examResults.some(e=>e.score>=35)},
  {id:"ticket",label:"受験票を受け取る",due:"2026-10-30",desc:"10/23発送。届かなければ協会に連絡"},
  {id:"final",label:"前日準備: 会場・HB鉛筆・時計・受験票",due:"2026-11-14",desc:"当日は12:15集合・13:00開始"},
  {id:"exam",label:"本番! 11/15(日) 13:00",due:"2026-11-15",desc:"落ち着いて。31点でいい試験"},
@@ -1331,7 +1326,8 @@ function journeyView(){
   const th=store.get("theme","auto");
   return `
   <button class="back" onclick="S.view='home';render()">← ホーム</button>
-  <header class="top"><h1>実績・データ</h1><div class="days">本番 ${examDateStr()}<br>あと<b>${daysToExam()}</b>日</div></header>
+  <header class="top"><h1>記録</h1><div class="days">本番 ${examDateStr()}<br>あと<b>${daysToExam()}</b>日</div></header>
+  <button class="row" onclick="S.view='roadmap';render()"><div class="ic w">📅</div><div class="tx"><b>受験の準備・手続き</b><span>申込・受験票・前日準備・本番当日のチェック</span></div><div class="chev">›</div></button>
   <div class="card"><h2>予想得点の推移</h2>${scoreTrendSvg(true)?`${scoreTrendSvg(true)}<div class="note">点線は合格圏（31点）。右肩上がりを目指そう。</div>`:"<p class='note'>2回以上解くと、得点の伸びがグラフで見られます。</p>"}</div>
   <div class="card"><h2>バッジ（${Object.keys(badges).length} / ${BADGES.length}）</h2>
     <div class="badgegrid">${BADGES.map(b=>{const got=badges[b.id];return `<div class="badge ${got?"got":""}"><div class="bic">${got?b.ic:"🔒"}</div><div class="bnm">${esc(b.name)}</div><div class="bds">${esc(b.desc)}</div></div>`;}).join("")}</div></div>
@@ -1387,12 +1383,13 @@ function roadmapView(){
       ${isNext&&m.read&&!done?`<button class="btn primary" style="margin-top:8px" onclick="${m.openFn||"startIntro()"}">▶ ${m.id==="strategy"?"必勝法を読む":"物語を読む"}</button>`:""}</div>
     </div>`; }).join("");
   return `
-  <header class="top"><h1>合格ロードマップ</h1><div class="days">本番 ${examDateStr()}<br>あと<b>${daysToExam()}</b>日</div></header>
-  <div class="card"><div class="eyebrow">いまの段階</div>${phaseHtml()}
-    <div class="note">① 暗記カードと分野別演習で基礎 → ② 過去問を3周（やさしい解説で理解）→ ③ 本番モードで仕上げ。参考書なし・このアプリだけで合格を目指せます。</div></div>
-  <div class="card"><h2>ステップ（${doneN} / ${MILES.length} 達成）</h2>
+  <button class="back" onclick="S.view='journey';render()">← 記録へ</button>
+  <header class="top"><h1>受験の準備</h1><div class="days">本番 ${examDateStr()}<br>あと<b>${daysToExam()}</b>日</div></header>
+  <div class="card"><div class="eyebrow">学習フェーズの目安</div>${phaseHtml()}
+    <div class="note">学習そのものは「コース」で進めます（物語 → 過去問）。ここは日付のある受験手続きのチェック用です。</div></div>
+  <div class="card"><h2>受験手続きチェック（${doneN} / ${MILES.length}）</h2>
     <div class="roadmap">${milesHtml}</div>
-    <div class="note">上から順に進みます。緑は達成済み、「今ここ」が次にやること。⏱は所要時間の目安です。</div></div>`;
+    <div class="note">終わったらチェック。緑は完了、「今ここ」が次にやること。⏱は所要の目安です。</div></div>`;
 }
 
 // ---------- 解法テクニック ----------
