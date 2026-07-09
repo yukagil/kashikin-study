@@ -682,9 +682,9 @@ function statsView(){
 // ---------- journey (マイページ) ----------
 const MILES=[
  {id:"apply",label:"受験申込をする",due:"2026-09-10",desc:"ネット申込は9/10 17:00締切。会社の団体申込の有無も総務に確認",link:"https://www.j-fsa.or.jp/chief/qualifying_exam/"},
- {id:"text",label:"テキスト＋過去問集を購入する",due:"2026-07-31",desc:"TAC 2026年度版を推奨。中古・旧年度版はNG"},
- {id:"phase1",label:"Phase1完了: テキスト1周＋分野別演習に着手",due:"2026-08-31",desc:"理解30%でいいから速く1周"},
- {id:"phase2",label:"Phase2完了: 過去問5年分を3周",due:"2026-10-18",desc:"間違えた問題は理由を1行で言えるまで"},
+ {id:"basics",label:"暗記カードで全分野を1周する",due:"2026-08-15",desc:"まずは○×カードで全体像をつかむ。この段階は理解が浅くてOK"},
+ {id:"phase1",label:"Phase1完了: 4分野すべてを一度は演習する",due:"2026-08-31",desc:"分野別演習とやさしい解説で、まず全範囲に触れる"},
+ {id:"phase2",label:"Phase2完了: 過去問5年分を3周する",due:"2026-10-18",desc:"間違えた問題はやさしい解説を読み、理由を1行で言えるまで"},
  {id:"goal35",label:"本番モードで35点以上を取る",due:"2026-11-01",desc:"取れたら自動でチェックされる"},
  {id:"ticket",label:"受験票を受け取る",due:"2026-10-30",desc:"10/23発送。届かなければ協会に連絡"},
  {id:"final",label:"前日準備: 会場・HB鉛筆・時計・受験票",due:"2026-11-14",desc:"当日は12:15集合・13:00開始"},
@@ -703,7 +703,7 @@ function bannerHtml(){
 }
 function phaseHtml(){
   const t=new Date();
-  const ph=[["申込・準備","2026-07-01","2026-08-31"],["Phase1 基礎","2026-07-15","2026-08-31"],["Phase2 過去問回転","2026-09-01","2026-10-18"],["Phase3 直前期","2026-10-19","2026-11-15"]];
+  const ph=[["準備","2026-07-01","2026-08-31"],["① 基礎固め","2026-07-15","2026-08-31"],["② 過去問回転","2026-09-01","2026-10-18"],["③ 直前仕上げ","2026-10-19","2026-11-15"]];
   return '<div class="phaserow">'+ph.map(([n,s,e])=>{
     const cls = t>new Date(e+"T23:59:59")?"past": t>=new Date(s)?"cur":"";
     return `<div class="ph ${cls}">${n}</div>`; }).join("")+"</div>";
@@ -749,7 +749,7 @@ function journeyView(){
   return `
   <header class="top"><h1>学習の記録</h1><div class="days">試験まで<br><b>${daysToExam()}</b>日</div></header>
   <div class="card"><h2>受験までの道のり（試験まであと${daysToExam()}日）</h2>${phaseHtml()}
-    <div class="note">Phase1: テキスト1周＋分野別演習 → Phase2: 過去問3周 → Phase3: 本番形式・弱点潰し</div></div>
+    <div class="note">① 暗記カードと分野別演習で基礎 → ② 過去問を3周（やさしい解説で理解） → ③ 本番モードで仕上げ。参考書なし・このアプリだけで合格を目指せます。</div></div>
   <div class="card"><h2>やることリスト</h2>${milesHtml}</div>
   <div class="statrow">
     <div class="stat"><div class="v">${streak()}<span style="font-size:12px">日</span></div><div class="l">連続学習 🔥</div></div>
