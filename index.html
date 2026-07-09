@@ -336,6 +336,13 @@ select{width:100%;padding:13px 15px;border-radius:var(--radius-sm);border:none;b
 .gitem .gy{font-size:11px;color:var(--sub);margin-left:7px;font-weight:400}
 .gitem .gd{font-size:12.5px;color:var(--sub);margin-top:3px;line-height:1.7}
 
+.strat-cta{background:var(--teal);box-shadow:0 4px 0 #0a6e64, var(--shadow-sm);color:#fff}
+.strat-cta:active{box-shadow:0 0 0 #0a6e64}
+.exbox{margin-top:18px;text-align:left;background:var(--bg-tint);border-radius:14px;padding:15px 16px;border-left:4px solid var(--primary)}
+.exlbl{font-size:11px;font-weight:800;color:var(--primary-ink);letter-spacing:.06em;margin-bottom:7px}
+.exq{font-size:14px;line-height:1.85}
+.expt{font-size:12.5px;color:var(--sub);margin-top:9px;font-weight:700}
+
 /* bottom tab bar */
 .tabbar{position:fixed;left:0;right:0;bottom:0;z-index:80;background:var(--tabbar);
   backdrop-filter:saturate(1.8) blur(18px);-webkit-backdrop-filter:saturate(1.8) blur(18px);
@@ -464,6 +471,37 @@ function introView(){
   <div class="tiphint" style="text-align:center;margin-top:12px">青い点線の用語はタップすると意味が出ます</div>`;
 }
 
+// ---------- 必勝法（オンボーディング・例題つき） ----------
+const STRATEGY=[
+ {emoji:"🎯",title:"満点はいらない。6割で受かる",body:"この試験は50問中31問（約6割）取れれば合格。毎年2〜3問は誰も解けない難問が混ざっています。だから「全部を完璧に」ではなく、\n\n“取れる問題を、確実に落とさない”\n\nこれが勝ち筋。まずこの心構えが、いちばん大事な必勝法です。肩の力を抜いていきましょう。"},
+ {emoji:"✅",title:"わな①「適切でない」の見落とし",body:"この試験で最大の事故は、設問が「適切でないものは？」なのに、うっかり“正しい肢”を選んでしまうこと。とてももったいない失点です。\n対策はシンプル。設問の「適切／適切でない」を、肢を読む前にまず丸で囲む。それだけで激減します。",ex:{q:"問「次のうち適切でないものはどれか」\n①②③は正しい説明。④だけが誤り。\n→ ここで正しい①を選ぶと不正解。答えは“誤っている”④。",point:"何を聞かれているかを、最初に固定する。"}},
+ {emoji:"🚩",title:"わな②断定ワードは誤りのサイン",body:"「常に」「一切」「直ちに」「〜に限られる」「〜にかかわらず」――こんな言い切り表現が出たら要注意。法律には必ず例外があるので、断定する肢は誤りのことが多いのです。\n逆に「原則として」「〜の場合を除き」と“逃げ道”がある肢は、正しいことが多い。決め手がないときの最後の判断に使えます。",ex:{q:"肢「貸金業者は、いかなる場合も直ちに登録を取り消される」\n→「いかなる場合も」「直ちに」＝強い言い切り。\n→ 例外が想像できるので、ほぼ誤り。",point:"迷ったら、言い切っている肢を疑う。"}},
+ {emoji:"🔢",title:"わな③数字と主体のすり替え",body:"誤り肢のいちばん多いパターンが、数字のすり替えです。2週間↔30日、3年↔2年、年収の3分の1↔2分の1、上限20%↔29.2%…。\nさらに「誰が」やるかの入れ替えも頻出。内閣総理大臣↔都道府県知事、譲渡人↔譲受人など。数字と“主体”が出たら、指さし確認しましょう。",ex:{q:"肢「貸金業の登録は5年ごとに更新を受ける」\n→ 正しくは“3年”ごと。数字のすり替え。\n→ 単位・期間・主体をチェックすれば見抜ける。",point:"数字と「誰が」に、赤丸をつける。"}},
+ {emoji:"🧩",title:"組合せ・個数問題の攻め方",body:"「①ab ②ad ③bc ④cd」のような組合せ問題は、確実に分かる肢が1つあれば、選択肢を半分に絞れます。4つ全部わからなくてOK。\n一方「正しいものはいくつ？」の個数問題は消去法が効かないので、暗記カードで鍛えた○×の即答力がそのまま武器になります。",ex:{q:"問「①ab ②ad ③bc ④cd」で、aが正しいと確信できた。\n→ aを含むのは①と②だけ。\n→ 一気に2択まで絞れる。",point:"確実な1肢から崩すと、ぐっと楽になる。"}},
+ {emoji:"🗺",title:"順番・時間、そしてこのアプリの使い方",body:"解く順番は“後ろから”がおすすめ。会計→保護→法令→民法の順に、範囲が狭く確実に取れる所を先に確保します。1問90秒で見切り、迷ったら仮マークして次へ。\nそして日々の学習は、この順で「言われた通り」に進めるだけ。\n① 暗記カードで基礎の○×\n② 過去問を解き、やさしい解説で理解\n③ 本番モードで仕上げ\nこのアプリを信じて進めば、合格に届きます。いってらっしゃい！"},
+];
+function startStrategy(){ S.stratCh=0; S.view="strategy"; render(); }
+function stratGo(d){ S.stratCh=Math.max(0,Math.min(STRATEGY.length-1,(S.stratCh||0)+d)); render(); window.scrollTo(0,0); }
+function finishStrategy(){ store.set("strategyRead",true); S.view="practice"; render(); setTimeout(()=>alert("必勝法、身につきました！あとは言われた通り進めるだけ 💪"),50); }
+function strategyView(){
+  const i=S.stratCh||0, ch=STRATEGY[i], last=i===STRATEGY.length-1;
+  const dots=STRATEGY.map((c,ix)=>`<span class="idot ${ix===i?"on":ix<i?"past":""}"></span>`).join("");
+  return `
+  <button class="back" onclick="S.view='home';render()">← とじる</button>
+  <div class="introtop"><div class="idots">${dots}</div><div class="ichap">必勝法 ${i+1} / ${STRATEGY.length}</div></div>
+  <div class="card introcard">
+    <div class="iemoji">${ch.emoji}</div>
+    <div class="ititle">${esc(ch.title)}</div>
+    <div class="ibody">${glossify(esc(ch.body).replace(/\n/g,"<br>"))}</div>
+    ${ch.ex?`<div class="exbox"><div class="exlbl">例題で確認</div><div class="exq">${glossify(esc(ch.ex.q).replace(/\n/g,"<br>"))}</div><div class="expt">💡 ${esc(ch.ex.point)}</div></div>`:""}
+  </div>
+  <div class="navbtns">
+    ${i>0?`<button class="btn ghost" style="flex:0 0 auto;width:auto;padding-left:22px;padding-right:22px" onclick="stratGo(-1)">←</button>`:""}
+    ${last?`<button class="cta ok" style="flex:1 1 auto" onclick="finishStrategy()">身につけた！学習をはじめる 🚀</button>`:`<button class="cta" style="flex:1 1 auto" onclick="stratGo(1)">次へ →</button>`}
+  </div>
+  <div class="tiphint" style="text-align:center;margin-top:12px">青い点線の用語はタップすると意味が出ます</div>`;
+}
+
 // ---------- 用語集ページ ----------
 let glossFilter={q:"",cat:""};
 const GCATS = [...new Set(Object.values(GLOSSARY).map(g=>g.cat))];
@@ -539,7 +577,7 @@ let S = { view:"home", session:null, cardSession:null, lastExam:null };
 function render(){
   const el=document.getElementById("app");
   const v=S.view;
-  el.innerHTML = v==="home"?homeView(): v==="intro"?introView(): v==="practice"?practiceView(): v==="quiz"?quizView(): v==="examResult"?examResultView():
+  el.innerHTML = v==="home"?homeView(): v==="intro"?introView(): v==="strategy"?strategyView(): v==="practice"?practiceView(): v==="quiz"?quizView(): v==="examResult"?examResultView():
                  v==="stats"?statsView(): v==="cards"?cardsView(): v==="cardPick"?cardPickView():
                  v==="journey"?journeyView(): v==="tech"?techView(): v==="glossary"?glossaryView():"";
   renderTabbar();
@@ -547,7 +585,7 @@ function render(){
 }
 const TABS=[["home","🏠","ホーム"],["practice","✏️","問題"],["glossary","📚","用語"],["journey","📈","記録"]];
 function currentTab(){ const v=S.view;
-  if(v==="home"||v==="intro")return "home";
+  if(v==="home"||v==="intro"||v==="strategy")return "home";
   if(v==="glossary")return "glossary";
   if(v==="journey"||v==="stats")return "journey";
   return "practice"; }
@@ -571,7 +609,12 @@ function homeView(){
   const rc = pred.score>=31?"var(--ok)": pred.score>=25?"var(--warn)":"var(--accent)";
   const hr=new Date().getHours();
   const greet = hr<11?"おはようございます":hr<18?"こんにちは":"こんばんは";
-  const introRead=store.get("introRead",false);
+  const introRead=store.get("introRead",false), stratRead=store.get("strategyRead",false);
+  let act;
+  if(!introRead) act={cls:"cta intro-cta",fn:"startIntro()",label:"📖 まずは3分の物語を読む",sub:"「貸金業ってなに？」を物語で予習（全6章）"};
+  else if(!stratRead) act={cls:"cta strat-cta",fn:"startStrategy()",label:"🎯 必勝法を身につける",sub:"受かる解き方を例題つきで（全6章）"};
+  else if(dueTotal) act={cls:"cta ok",fn:"startDue()",label:"⏰ 今日の復習をする",sub:`忘却曲線が選んだ ${dueTotal}件（過去問${due}＋カード${cdue}）`};
+  else act={cls:"cta",fn:"startQuick()",label:"⚡ 今日の学習をはじめる",sub:"未着手＋弱点をまぜてクイック10問"};
   return `
   <header class="top"><h1>合格エンジン</h1><div class="days">試験まで<br><b>${daysToExam()}</b>日</div></header>
   <div class="hchips">
@@ -579,16 +622,9 @@ function homeView(){
     <div class="hchip"><span class="em">📚</span>${answered} / ${ALL.length}問</div>
   </div>
   <div class="greet">${greet}。<br><span>今日も一歩ずつ。</span></div>
-  ${bannerHtml()}
-  ${!introRead?`<button class="cta intro-cta" style="margin-bottom:12px" onclick="startIntro()">📖 まずは3分の物語から<small>「貸金業ってなに？」を物語でやさしく予習（全6章）</small></button>`:""}
-  <button class="cta ${dueTotal?"ok":""}" onclick="${dueTotal?"startDue()":"startQuick()"}" style="margin-bottom:12px">
-    ${dueTotal?"⏰ 今日の復習をする":"⚡ 今日の学習をはじめる"}
-    <small>${dueTotal?`忘却曲線が選んだ ${dueTotal}件（過去問${due}＋カード${cdue}）`:"未着手＋弱点をまぜてクイック10問"}</small>
-  </button>
-  <div class="grid2" style="margin-bottom:14px">
-    <button class="btn purple" onclick="S.view='cardPick';render()">🧠 暗記カード<small>${CARDS.length}枚で高速固め</small></button>
-    <button class="btn" onclick="startWeak()" ${weak?"":"disabled"}>🔥 弱点復習<small>${weak?weak+"問がニガテ":"まだありません"}</small></button>
-  </div>
+  ${urgentAdminHtml()}
+  <div class="eyebrow" style="margin:2px 2px 8px">いま、これだけやればOK</div>
+  <button class="${act.cls}" style="margin-bottom:16px" onclick="${act.fn}">${act.label}<small>${act.sub}</small></button>
   <div class="card">
     <div class="eyebrow">いまの実力（予想得点）</div>
     <div class="ringwrap">
@@ -610,7 +646,11 @@ function practiceView(){
   const cs=catStats();
   return `
   <header class="top"><h1>問題を解く</h1><div class="days">試験まで<br><b>${daysToExam()}</b>日</div></header>
-  <button class="cta" onclick="startQuick()" style="margin-bottom:14px">⚡ クイック10問<small>未着手＋弱点を自動でミックス</small></button>
+  <button class="cta" onclick="startQuick()" style="margin-bottom:10px">⚡ クイック10問<small>未着手＋弱点を自動でミックス</small></button>
+  <div class="grid2" style="margin-bottom:14px">
+    <button class="btn purple" onclick="S.view='cardPick';render()">🧠 暗記カード<small>${CARDS.length}枚で高速固め</small></button>
+    <button class="btn" onclick="startWeak()" ${weakList().length?"":"disabled"}>🔥 弱点復習<small>${weakList().length?weakList().length+"問がニガテ":"まだありません"}</small></button>
+  </div>
   <div class="card"><h2>分野・論点から選ぶ</h2>
     <select id="selCat"><option value="">分野を選んで演習…</option>${CATS.map(c=>`<option value="${c}">${CATSHORT[c]}（全${cs[c].n}問）</option>`).join("")}</select>
     <select id="selTopic"><option value="">論点を選んで演習…</option>${[...new Set(ALL.map(q=>q.topic).filter(Boolean))].sort().map(t=>`<option>${t}</option>`).join("")}</select>
@@ -818,7 +858,8 @@ function statsView(){
 
 // ---------- journey (マイページ) ----------
 const MILES=[
- {id:"intro",label:"物語で全体像をつかむ（約3分・全6章）",due:"2026-08-01",desc:"「貸金業ってなに？」をやさしく予習。ここから合格の旅がはじまります",read:true,auto:()=>!!store.get("introRead",false)},
+ {id:"intro",label:"物語で全体像をつかむ（約3分・全6章）",due:"2026-08-01",desc:"「貸金業ってなに？」をやさしく予習。ここから合格の旅がはじまります",read:true,openFn:"startIntro()",auto:()=>!!store.get("introRead",false)},
+ {id:"strategy",label:"必勝法を身につける（例題つき・全6章）",due:"2026-08-05",desc:"受かるための解き方のコツ。先に知っておくほど得します",read:true,openFn:"startStrategy()",auto:()=>!!store.get("strategyRead",false)},
  {id:"apply",label:"受験申込をする",due:"2026-09-10",desc:"ネット申込は9/10 17:00締切。会社の団体申込の有無も総務に確認",link:"https://www.j-fsa.or.jp/chief/qualifying_exam/"},
  {id:"basics",label:"暗記カードで全分野を1周する",due:"2026-08-15",desc:"まずは○×カードで全体像をつかむ。この段階は理解が浅くてOK",auto:()=>CARDS.length>0&&CARDS.every(c=>chist[c.id]&&chist[c.id].a>0)},
  {id:"phase1",label:"Phase1完了: 4分野すべてを一度は演習する",due:"2026-08-31",desc:"分野別演習とやさしい解説で、まず全範囲に触れる",auto:()=>{const cs=catStats();return CATS.every(c=>cs[c].seen>=5);}},
@@ -857,6 +898,11 @@ function bannerHtml(){
     <div style="font-size:11.5px;opacity:.92;margin:2px 0 10px">${sub}</div>
     <button onclick="S.view='journey';render()">記録で確認 →</button>
     ${m.auto?"":`<button onclick="mileToggle('${m.id}')">済みにする ✓</button>`}</div>`;
+}
+function urgentAdminHtml(){
+  const m=MILES.find(x=>!x.auto&&!mileDone(x)); if(!m) return "";
+  const d=mileDays(m); if(d>14) return "";
+  return `<div class="banner" onclick="S.view='journey';render()" style="cursor:pointer"><div class="cap">⚠️ 忘れずに</div><div class="tt">${esc(m.label)}${d>=0?`（あと${d}日）`:"（期限超過）"}</div><div style="font-size:11.5px;color:var(--sub)">タップで記録を開く →</div></div>`;
 }
 function phaseHtml(){
   const t=new Date();
@@ -915,7 +961,7 @@ function journeyView(){
       ${chk}
       <div><div class="lb">${esc(m.label)}${isNext&&!done?' <span class="nowtag">今ここ</span>':""}</div>
       <div class="dd ${!done&&!locked&&d<0?"over":""}">${dd}${prog}${m.desc?" ・ "+esc(m.desc):""}${link}</div>
-      ${isNext&&m.read&&!done?'<button class="btn primary" style="margin-top:8px" onclick="startIntro()">▶ 物語を読む</button>':""}</div>
+      ${isNext&&m.read&&!done?`<button class="btn primary" style="margin-top:8px" onclick="${m.openFn||"startIntro()"}">▶ ${m.id==="strategy"?"必勝法を読む":"物語を読む"}</button>`:""}</div>
     </div>`; }).join("");
   return `
   <header class="top"><h1>学習の記録</h1><div class="days">試験まで<br><b>${daysToExam()}</b>日</div></header>
