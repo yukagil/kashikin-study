@@ -396,36 +396,25 @@ select{width:100%;padding:13px 15px;border-radius:var(--radius-sm);border:none;b
 .wscard .bar i{background:var(--wc)}
 .wscard .wsprog{font-size:11px;color:var(--sub);margin-top:5px;font-weight:600}
 
-/* 冒険コース（任天堂風オーバーワールド） */
-.cworld{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:800;color:var(--wc,var(--primary-ink));margin:26px 4px 6px}
-.cworld .wnum{font-size:9.5px;font-weight:800;color:#fff;background:var(--wc,var(--primary));border-radius:999px;padding:3px 9px;letter-spacing:.04em;flex:none}
-.cworld .wbadge{font-size:16px;flex:none}
-.cworld .wttl{flex:1;min-width:0}
-.cworld .wprog{font-size:11px;font-weight:800;color:var(--sub)}
-.cscene{position:relative;margin:0 auto;max-width:480px;border-radius:22px;overflow:hidden;
-  background:color-mix(in srgb,var(--wc) 9%, var(--card));box-shadow:inset 0 0 0 1px var(--hairline), var(--shadow-sm)}
-.cdeco{position:absolute;inset:0;z-index:0;pointer-events:none}
-.cdeco .dec{position:absolute;transform:translate(-50%,-50%);opacity:.5}
-.croad{position:absolute;inset:0;z-index:1}
-.croad .road{stroke:color-mix(in srgb,var(--wc) 30%, var(--card))}
-.croad .roadc{stroke:var(--card);opacity:.9}
-.cflag{position:absolute;left:50%;transform:translateX(-50%);z-index:2;font-size:34px;filter:drop-shadow(0 3px 2px rgba(0,0,0,.15))}
-.avatar{position:absolute;top:-32px;font-size:30px;z-index:3;animation:sbob 1.1s ease-in-out infinite;filter:drop-shadow(0 3px 2px rgba(0,0,0,.2))}
-.cnode{position:absolute;width:118px;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;z-index:2}
-.cnode .circle{width:70px;height:70px;border-radius:50%;border:none;font-size:28px;cursor:pointer;background:var(--card);box-shadow:0 5px 0 var(--line), var(--shadow-sm);color:var(--ink);transition:transform .08s}
-.cnode .circle:active{transform:translateY(4px)}
-.cnode.done .circle{background:var(--ok);color:#fff;box-shadow:0 5px 0 var(--ok-strong)}
-.cnode.current .circle{background:var(--wc,var(--primary));color:#fff;box-shadow:0 5px 0 rgba(0,0,0,.18)}
-.cnode.locked .circle{background:var(--bg-tint);color:var(--faint);box-shadow:0 5px 0 var(--line);cursor:not-allowed}
-.cnode.open .circle{box-shadow:0 5px 0 var(--line), inset 0 0 0 2.5px var(--wc,var(--primary))}
-.cnode .clabel{font-size:10.5px;color:var(--sub);text-align:center;margin-top:6px;line-height:1.3;font-weight:700}
-.cnode.current .clabel{color:var(--ink)}
-.cnode.locked .clabel{opacity:.55}
-.startbub{position:absolute;top:-28px;background:var(--wc,var(--primary));color:#fff;font-size:10.5px;font-weight:800;padding:3px 11px;border-radius:999px;box-shadow:var(--shadow-sm);animation:sbob 1.1s ease-in-out infinite;white-space:nowrap;letter-spacing:.04em}
-.startbub::after{content:"";position:absolute;left:50%;bottom:-4px;transform:translateX(-50%);border:5px solid transparent;border-top-color:var(--wc,var(--primary));border-bottom:0}
-@keyframes sbob{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
-.cgoal{text-align:center;margin:18px 0 6px;font-size:46px}
-.cgoal div{font-size:14px;font-weight:800;color:var(--gold-ink);margin-top:2px}
+/* 学習コース（マス目グリッド） */
+.cworld{display:flex;align-items:center;gap:9px;font-size:15px;font-weight:800;color:var(--wc,var(--primary-ink));margin:24px 4px 8px}
+.cworld .wnum{font-size:19px;flex:none}
+.cworld .wttl{flex:1;min-width:0;display:flex;flex-direction:column;line-height:1.2}
+.cworld .wcsub{font-size:10.5px;font-weight:600;color:var(--sub)}
+.cworld .wprog{font-size:12px;font-weight:800;color:var(--sub)}
+.cgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.gtile{position:relative;border:none;border-radius:16px;padding:12px 8px 10px;background:var(--card);box-shadow:0 3px 0 var(--line),var(--shadow-sm);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;min-height:100px;justify-content:center;transition:transform .07s}
+.gtile:active{transform:translateY(3px);box-shadow:0 0 0 var(--line),var(--shadow-sm)}
+.gtile.done{background:var(--ok-soft);box-shadow:0 3px 0 var(--ok-strong)}
+.gtile.current{box-shadow:0 3px 0 var(--wc,var(--primary-strong)), inset 0 0 0 2.5px var(--wc,var(--primary))}
+.gtile.locked{opacity:.5;background:var(--bg-tint);box-shadow:none;cursor:not-allowed}
+.gtile .gem{font-size:27px;line-height:1}
+.gtile .glb{font-size:10px;font-weight:700;color:var(--sub);text-align:center;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.gtile.done .glb{color:var(--ok-ink)}
+.gtile .gnum{position:absolute;top:5px;left:8px;font-size:9px;font-weight:800;color:var(--faint)}
+.gtile .gcheck{position:absolute;top:4px;right:7px;font-size:12px;font-weight:800;color:var(--ok)}
+.gtile .gcur{position:absolute;top:3px;right:7px;font-size:11px;color:var(--wc,var(--primary))}
+
 
 /* pace & roadmap-mini (home) */
 .pacerow{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
@@ -648,33 +637,24 @@ function storyView(){
 }
 
 // ---------- 冒険コース（ゲームマップ） ----------
+const CSUBJ=[
+  {name:"プロローグ",sub:"導入（物語と必勝法）",col:"#3b5bdb",ic:"🚩",cat:null},
+  {name:"貸金業法",sub:"科目① 法及び関係法令",col:"#e0a015",ic:"⚖️",cat:CATS[0]},
+  {name:"民法・実務",sub:"科目② 貸付けの法令と実務",col:"#2f8f5b",ic:"📜",cat:CATS[1]},
+  {name:"資金需要者の保護",sub:"科目③ 保護",col:"#2aa7d8",ic:"🛡️",cat:CATS[2]},
+  {name:"財務・会計",sub:"科目④ 財務及び会計",col:"#8b5cf6",ic:"📊",cat:CATS[3]},
+];
 function courseSections(){
-  const secs=[];
-  // プロローグ：全体像と必勝法
-  const p0=[];
-  p0.push({t:"read",label:"はじまりの物語",ic:"📖",done:store.get("introRead",false),open:"startIntro()"});
-  p0.push({t:"read",label:"必勝の心得",ic:"🎯",done:store.get("strategyRead",false),open:"startStrategy()"});
-  secs.push({name:"はじまりの草原",sub:"プロローグ（全体像と必勝法）",nodes:p0});
-  // 4つの科目ワールド（各ワールド＝その科目の 物語 → 過去問）
   const STORYCAT={"貸金業法":CATS[0],"民法・実務":CATS[1],"資金需要者の保護":CATS[2],"財務・会計":CATS[3]};
-  const SUBJECTS=[
-    {cat:CATS[0],name:"貸金業法の国",sub:"科目① 法及び関係法令"},
-    {cat:CATS[1],name:"民法・実務の森",sub:"科目② 貸付けの法令と実務"},
-    {cat:CATS[2],name:"保護の里",sub:"科目③ 資金需要者等の保護"},
-    {cat:CATS[3],name:"会計の城",sub:"科目④ 財務及び会計"},
-  ];
-  SUBJECTS.forEach(su=>{
-    const ns=[];
-    STORIES.filter(st=>STORYCAT[st.cat]===su.cat).forEach(st=>ns.push({t:"read",label:st.title,ic:st.ic,done:storyRead(st.id),open:`startStory('${st.id}')`}));
-    const qids=ALL.filter(q=>q.category===su.cat).map(q=>q.id);
-    for(let k=0;k<qids.length;k+=10){
-      const qs=qids.slice(k,k+10);
-      const ans=qs.filter(id=>hist[id]&&hist[id].a).length;
-      const cor=qs.filter(id=>hist[id]&&hist[id].c>0).length;
-      const done=ans>=qs.length;
-      ns.push({t:"quiz",label:`過去問 ステージ${Math.floor(k/10)+1}`,ic:"✏️",done,stars:done?(cor>=9?3:cor>=7?2:1):0,open:`startSession(${JSON.stringify(qs)},"drill")`});
+  const secs=CSUBJ.map(su=>{
+    const nodes=[];
+    if(su.cat===null){
+      nodes.push({t:"read",label:"はじまりの物語",ic:"📖",done:store.get("introRead",false),open:"startIntro()"});
+      nodes.push({t:"read",label:"必勝の心得",ic:"🎯",done:store.get("strategyRead",false),open:"startStrategy()"});
+    } else {
+      STORIES.filter(st=>STORYCAT[st.cat]===su.cat).forEach(st=>nodes.push({t:"read",label:st.title,ic:st.ic,done:storyRead(st.id),open:`startStory('${st.id}')`}));
     }
-    secs.push({name:su.name,sub:su.sub,nodes:ns});
+    return {name:su.name,sub:su.sub,col:su.col,ic:su.ic,nodes};
   });
   const flat=[]; secs.forEach(s=>s.nodes.forEach(n=>flat.push(n)));
   let fo=flat.findIndex(n=>!n.done); if(fo<0)fo=flat.length;
@@ -686,84 +666,58 @@ function enterWorld(si){
   if(si<0){ const secs=courseSections(); let idx=0; secs.forEach((s,i)=>{ if(s.nodes.some(n=>n.current)) idx=i; }); si=idx; }
   S.view="coursemap"; S.scrollWorld=si; render();
 }
-function courseView(){ // ワールドセレクト（全体像）
+function courseView(){ // 科目セレクト（全体像）
   const secs=courseSections();
   let flatN=0, doneN=0; secs.forEach(s=>s.nodes.forEach(n=>{flatN++; if(n.done)doneN++;}));
   const cards=secs.map((sec,si)=>{
-    const m=CWMETA[si%CWMETA.length], total=sec.nodes.length, cl=sec.nodes.filter(n=>n.done).length;
+    const total=sec.nodes.length, cl=sec.nodes.filter(n=>n.done).length;
     const first=sec.nodes[0], pct=Math.round(cl/total*100);
     const state = cl===total?"done" : (!first.locked?"open":"locked");
-    const tag = state==="done"?'<span class="wstag done">クリア ✓</span>' : state==="locked"?'<span class="wstag lock">🔒 未開放</span>' : '<span class="wstag go">▶ 入る</span>';
-    return `<button class="wscard ${state}" style="--wc:${m[0]}" ${state==="locked"?"disabled":`onclick="enterWorld(${si})"`}>
-      <div class="wsic">${m[1]}</div>
+    const tag = state==="done"?'<span class="wstag done">読了 ✓</span>' : state==="locked"?'<span class="wstag lock">🔒</span>' : '<span class="wstag go">▶ 読む</span>';
+    return `<button class="wscard ${state}" style="--wc:${sec.col}" ${state==="locked"?"disabled":`onclick="enterWorld(${si})"`}>
+      <div class="wsic">${sec.ic}</div>
       <div class="wsmid">
-        <div class="wshd"><span class="wsnum">WORLD ${si+1}</span><span class="wssub">${esc(sec.sub)}</span>${tag}</div>
+        <div class="wshd"><span class="wssub">${esc(sec.sub)}</span>${tag}</div>
         <div class="wsttl">${esc(sec.name)}</div>
         <div class="bar"><i style="width:${pct}%"></i></div>
-        <div class="wsprog">${cl} / ${total} クリア</div>
+        <div class="wsprog">${cl} / ${total} 話</div>
       </div>
     </button>`;
   }).join("");
   const allPct=Math.round(doneN/flatN*100);
   return `
-  <header class="top"><h1>冒険コース</h1><div class="days">クリア<br><b>${doneN}</b>/${flatN}</div></header>
-  <div class="card"><div class="eyebrow">ぜんたいの進み（全${secs.length}ワールド）</div>
+  <header class="top"><h1>学習コース</h1><div class="days">読了<br><b>${doneN}</b>/${flatN}</div></header>
+  <div class="card"><div class="eyebrow">物語を一周（全${flatN}話）</div>
     <div class="bar" style="height:12px"><i style="width:${allPct}%"></i></div>
-    <div class="note" style="margin-top:8px">ワールドを選んで冒険へ。まず物語で全体像 → 過去問を制覇して 🏆 ゴールを目指そう。</div></div>
-  <button class="cta" style="margin-bottom:14px" onclick="enterWorld(-1)">🗺 続きから道を見る</button>
+    <div class="note" style="margin-top:8px">まず物語で全体像を一周。読み終えたら「問題」タブでくり返し演習しよう（周回するほど力がつきます）。</div></div>
+  <button class="cta" style="margin-bottom:14px" onclick="enterWorld(-1)">▶ 続きから読む</button>
   ${cards}
-  <div class="cgoal">🏆<div>ゴール ・ 合格！</div></div>`;
+  <button class="cta ok" style="margin-top:6px" onclick="S.view='practice';render()">✏️ 問題でひたすら演習する</button>`;
 }
 function courseMapView(){
   const secs=courseSections();
-  const STEP=118, R=34;
   let flatN=0, doneN=0; secs.forEach(s=>s.nodes.forEach(n=>{flatN++; if(n.done)doneN++;}));
-  const THEMES=[
-    {col:"#46a758",deco:["🌳","🌿","🌸","🍄","🦋","🌳"]},
-    {col:"#e0a015",deco:["🏯","⚖️","📜","🪙","🏛️","📜"]},
-    {col:"#2f8f5b",deco:["🌲","🍄","🦉","🍂","🌲","🐿️"]},
-    {col:"#2aa7d8",deco:["🏡","🛡️","🌾","🌻","🕊️","🏡"]},
-    {col:"#8b5cf6",deco:["🏰","📊","💰","👑","🔢","💎"]},
-  ];
   const blocks=secs.map((sec,si)=>{
-    const th=THEMES[si%THEMES.length];
-    const N=sec.nodes.length, H=N*STEP, SH=H+52, col=th.col;
-    const last=si===secs.length-1;
-    const cleared=sec.nodes.filter(n=>n.done).length;
-    const pts=sec.nodes.map((n,i)=>({x:+(50+26*Math.sin(i*Math.PI/2)).toFixed(2), y:i*STEP+R+12}));
-    const d="M "+pts.map(p=>`${p.x} ${p.y}`).join(" L ")+` L 50 ${H+22}`;
-    const deco=sec.nodes.map((n,i)=>{
-      const p=pts[i]; const dx=p.x>50?p.x-30:p.x+30; const em=th.deco[i%th.deco.length]; const sz=[26,22,30,24][i%4];
-      return `<span class="dec" style="left:${dx}%;top:${p.y-8}px;font-size:${sz}px">${em}</span>`;
-    }).join("");
-    const nodes=sec.nodes.map((n,i)=>{
+    const cl=sec.nodes.filter(n=>n.done).length, col=sec.col;
+    const tiles=sec.nodes.map((n,i)=>{
       const cls=n.done?"done":n.current?"current":n.locked?"locked":"open";
-      const face=n.done?(n.t==="quiz"?(n.stars?"⭐".repeat(n.stars):"✓"):"✓"):(n.locked?"🔒":n.ic);
-      const p=pts[i];
-      return `<div class="cnode ${cls}" style="left:${p.x}%;top:${p.y-R}px">
-        ${n.current?`<div class="avatar">🧑‍🎓</div>`:""}
-        <button class="circle" style="--wc:${col}" ${n.locked?"disabled":`onclick="${n.open}"`}>${face}</button>
-        <div class="clabel">${esc(n.label)}</div>
-      </div>`;
+      const face=n.locked?"🔒":n.ic;
+      return `<button class="gtile ${cls}" style="--wc:${col}" ${n.locked?"disabled":`onclick="${n.open}"`}>
+        <span class="gnum">${si+1}-${i+1}</span>
+        <span class="gem">${face}</span>
+        <span class="glb">${esc(n.label)}</span>
+        ${n.done?'<span class="gcheck">✓</span>':n.current?'<span class="gcur">▶</span>':""}
+      </button>`;
     }).join("");
-    return `<div id="cw-${si}"><div class="cworld" style="--wc:${col}"><span class="wnum">WORLD ${si+1}</span><span class="wbadge">${th.deco[0]}</span><span class="wttl">${esc(sec.name)}<span class="wcsub">${esc(sec.sub)}</span></span><span class="wprog">${cleared}/${N}</span></div>
-    <div class="cscene" style="height:${SH}px;--wc:${col}">
-      <div class="cdeco">${deco}</div>
-      <svg class="croad" viewBox="0 0 100 ${SH}" preserveAspectRatio="none" width="100%" height="${SH}" aria-hidden="true">
-        <path class="road" d="${d}" fill="none" stroke-width="17" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
-        <path class="roadc" d="${d}" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="0.1 10" vector-effect="non-scaling-stroke"/>
-      </svg>
-      ${nodes}
-      <div class="cflag" style="top:${H+2}px">${last?"🏰":"🚩"}</div>
-    </div></div>`;
+    return `<div id="cw-${si}" class="cworld" style="--wc:${col}"><span class="wnum">${sec.ic}</span><span class="wttl">${esc(sec.name)}<span class="wcsub">${esc(sec.sub)}</span></span><span class="wprog">${cl}/${sec.nodes.length}</span></div>
+    <div class="cgrid">${tiles}</div>`;
   }).join("");
   return `
-  <button class="back" onclick="S.view='course';render()">← ワールド選択</button>
-  <header class="top"><h1>冒険コース</h1><div class="days">クリア<br><b>${doneN}</b>/${flatN}</div></header>
-  <p class="note" style="margin:0 0 4px">スタートから一本道。⭐は正答数（10問中7・9以上で増）。</p>
+  <button class="back" onclick="S.view='course';render()">← 科目えらび</button>
+  <header class="top"><h1>学習コース</h1><div class="days">読了<br><b>${doneN}</b>/${flatN}</div></header>
+  <p class="note" style="margin:0 0 4px">物語を上から一周。これで全体像がつかめます。用語は青い点線タップ。</p>
   ${blocks}
-  <div class="cgoal">🏆<div>ゴール ・ 合格！</div></div>
-  <div class="footer-note">自由に解きたいときは「問題」タブへ。受験の手続きは「記録」タブの<a href="#" onclick="S.view='roadmap';render();return false" style="color:var(--primary-ink);font-weight:700">受験の準備</a>で確認できます。</div>`;
+  <div class="card center" style="margin-top:16px"><div style="font-size:34px">🎓</div><div style="font-weight:800;margin-top:4px">一周おつかれさま！</div><p class="note">ここからは「問題」でくり返し演習。周回するほど力がつきます。</p><button class="cta" style="margin-top:10px" onclick="S.view='practice';render()">✏️ 問題でひたすら演習する</button></div>`;
 }
 
 // ---------- 用語集ページ ----------
@@ -991,7 +945,7 @@ function homeView(){
     <div class="pacesub">全体カバー ${answered}/${ALL.length}問（${covPct}%）・ 今日 ${todayDone}問${unseen>0?(todayDone>=perDay?" ✓ ノルマ達成！":`（あと${Math.max(0,perDay-todayDone)}問）`):""}</div>
   </div>
   <div class="card" onclick="S.view='course';render()" style="cursor:pointer">
-    <div class="eyebrow">冒険コース ・ 学習の道</div>
+    <div class="eyebrow">学習コース ・ 物語を一周</div>
     <div class="rmnow">📍 <b>${_ccur?esc(_ccur.wname):"ゴール 🏆"}</b></div>
     <div class="rmnext">${_ccur?`いま：${esc(_ccur.label)}`:"全ステージ制覇！おめでとう"}</div>
     <div class="bar" style="margin-top:11px"><i style="width:${_cpct}%"></i></div>
