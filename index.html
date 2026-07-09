@@ -256,6 +256,27 @@ select{width:100%;padding:13px;border-radius:var(--radius-sm);border:none;box-sh
 .gitem .gy{font-size:11px;color:var(--sub);margin-left:7px;font-weight:400}
 .gitem .gd{font-size:12.5px;color:var(--sub);margin-top:3px;line-height:1.7}
 
+/* ---------- はじめての物語（イントロ） ---------- */
+.intro-cta{background:linear-gradient(135deg,#7c3aed,#3366ff);box-shadow:0 5px 0 #4a1f9e}
+.intro-cta:active{box-shadow:0 1px 0 #4a1f9e}
+.introtop{display:flex;align-items:center;justify-content:space-between;margin:2px 2px 12px}
+.idots{display:flex;gap:6px}
+.idot{width:8px;height:8px;border-radius:999px;background:var(--line)}
+.idot.past{background:var(--accent)}
+.idot.on{background:var(--accent);width:22px}
+.ichap{font-size:12px;color:var(--sub);font-weight:700}
+.introcard{padding:26px 20px;text-align:center}
+.iemoji{font-size:56px;line-height:1;margin-bottom:14px}
+.ititle{font-size:22px;font-weight:800;letter-spacing:-.01em;margin-bottom:16px}
+.ibody{font-size:15.5px;line-height:2;text-align:left}
+/* ---------- ロードマップ（タイムライン） ---------- */
+.roadmap .mile{position:relative}
+.roadmap .mile::before{content:"";position:absolute;left:13px;top:36px;bottom:-1px;width:2px;background:var(--line);z-index:0}
+.roadmap .mile:last-child::before{display:none}
+.roadmap .mile.done::before{background:var(--ok)}
+.roadmap .mile .chk{position:relative;z-index:1}
+.roadmap .mile.next::before{left:21px}
+
 /* ---------- bottom tab bar ---------- */
 .tabbar{position:fixed;left:0;right:0;bottom:0;z-index:80;background:rgba(255,255,255,.92);
   backdrop-filter:saturate(1.6) blur(14px);-webkit-backdrop-filter:saturate(1.6) blur(14px);
@@ -345,6 +366,36 @@ function showTip(term,ev){
 }
 function closeTip(){ const ms=document.querySelectorAll(".tipmask"); if(ms.length) ms[ms.length-1].remove(); }
 
+// ---------- はじめての物語（イントロ） ----------
+const INTRO=[
+ {emoji:"🤝",title:"お金を貸すって、悪いこと？",body:"友だちに「ちょっと貸して」と頼まれたこと、ありませんか。お金の貸し借りは、困ったときの助け合いでもあります。それを仕事（業）として行うのが貸金業です。カードローンや消費者金融がその代表。急にお金が必要になった人にとって、貸してくれる相手がいるのはとても心強いこと。決して悪者ではありません。\nでも――強い力は、使い方を間違えると人を傷つけることもありました。"},
+ {emoji:"😢",title:"むかし、たくさんの人が泣いた",body:"かつては金利にあいまいな“グレーゾーン”があり、年29.2%といった高い利息も横行していました。借りても借りても利息で元本が減らない。複数の会社から借りて雪だるま式にふくらむ「多重債務」で、生活や人生を壊してしまう人が続出したのです。\nこれは社会全体の問題になりました。「弱い立場の“借りる人”を守るルールがいる」――そうして2006年、法律は大きく生まれ変わりました。あなたが学ぶルールは、誰かを守るために生まれたものなのです。"},
+ {emoji:"🔢",title:"まず、3つの数字だけ",body:"むずかしく見える貸金業法も、背骨はとてもシンプル。まずこの3つを押さえれば大丈夫です。\n① 上限金利 … 利息制限法で年15〜20%まで。これを超える利息は無効。出資法では20%を超えると刑罰の対象になります。\n② 総量規制 … 借りられるのは原則「年収の3分の1」まで。借りすぎを防ぐしくみです。\n③ 登録制 … 貸金業を営むには、国や都道府県への登録が必須。\nこの3本柱が、すべての土台になります。"},
+ {emoji:"🎓",title:"あなたが目指す“主任者”",body:"ルールがあっても、現場で守る人がいなければ意味がありません。そこで、各営業所に必ず置くよう義務づけられているのが貸金業務取扱主任者。いわば、お金の貸し借りの現場を見張る“法律の番人”です。\nあなたが挑戦しているのは、その国家資格。合格すれば、困っている人を正しく守れる立場になれる――そう考えると、ちょっとワクワクしませんか。"},
+ {emoji:"🗺",title:"敵を知ろう：テストのすがた",body:"相手を知れば、こわくありません。試験は50問・4択・2時間。合格ラインは例年31点前後、つまり“約6割”でOK。満点はいりません。\n出題は4つの分野に分かれます。法令（貸金業法）が27問といちばん重要、貸付け実務（民法など）が15問、資金需要者の保護が5問、財務・会計が3問。\n要は「6割を効率よく取るゲーム」。全部を完璧にする必要はないんです。"},
+ {emoji:"🚀",title:"このアプリだけで、合格まで",body:"参考書は要りません。地図はこう描けます。\n① この物語で全体像をつかむ（今ここ！）\n② 暗記カードで基礎の○×\n③ 過去問をくり返し、やさしい解説で理解する\n④ 本番モードで仕上げる\nわからない用語が出てきたら、青い点線をタップすれば意味が出ます。準備はいい？ さあ、合格への地図を広げましょう。"},
+];
+function startIntro(){ S.introCh=0; S.view="intro"; render(); }
+function introGo(d){ S.introCh=Math.max(0,Math.min(INTRO.length-1,(S.introCh||0)+d)); render(); window.scrollTo(0,0); }
+function finishIntro(){ store.set("introRead",true); S.view="practice"; render(); setTimeout(()=>alert("よくできました！全体像はバッチリ。さっそく学習をはじめよう 🎉"),50); }
+function introView(){
+  const i=S.introCh||0, ch=INTRO[i], last=i===INTRO.length-1;
+  const dots=INTRO.map((c,ix)=>`<span class="idot ${ix===i?"on":ix<i?"past":""}"></span>`).join("");
+  return `
+  <button class="back" onclick="S.view='home';render()">← とじる</button>
+  <div class="introtop"><div class="idots">${dots}</div><div class="ichap">第${i+1}章 / 全${INTRO.length}章</div></div>
+  <div class="card introcard">
+    <div class="iemoji">${ch.emoji}</div>
+    <div class="ititle">${esc(ch.title)}</div>
+    <div class="ibody">${glossify(esc(ch.body).replace(/\n/g,"<br>"))}</div>
+  </div>
+  <div class="navbtns">
+    ${i>0?`<button class="btn ghost" style="flex:none;padding-left:18px;padding-right:18px" onclick="introGo(-1)">←</button>`:""}
+    ${last?`<button class="cta ok" style="flex:1" onclick="finishIntro()">読み終わった！学習をはじめる 🚀</button>`:`<button class="cta" style="flex:1" onclick="introGo(1)">次の章へ →</button>`}
+  </div>
+  <div class="tiphint" style="text-align:center;margin-top:12px">青い点線の用語はタップすると意味が出ます</div>`;
+}
+
 // ---------- 用語集ページ ----------
 let glossFilter={q:"",cat:""};
 const GCATS = [...new Set(Object.values(GLOSSARY).map(g=>g.cat))];
@@ -420,7 +471,7 @@ let S = { view:"home", session:null, cardSession:null, lastExam:null };
 function render(){
   const el=document.getElementById("app");
   const v=S.view;
-  el.innerHTML = v==="home"?homeView(): v==="practice"?practiceView(): v==="quiz"?quizView(): v==="examResult"?examResultView():
+  el.innerHTML = v==="home"?homeView(): v==="intro"?introView(): v==="practice"?practiceView(): v==="quiz"?quizView(): v==="examResult"?examResultView():
                  v==="stats"?statsView(): v==="cards"?cardsView(): v==="cardPick"?cardPickView():
                  v==="journey"?journeyView(): v==="tech"?techView(): v==="glossary"?glossaryView():"";
   renderTabbar();
@@ -428,7 +479,7 @@ function render(){
 }
 const TABS=[["home","🏠","ホーム"],["practice","✏️","問題"],["glossary","📚","用語"],["journey","📈","記録"]];
 function currentTab(){ const v=S.view;
-  if(v==="home")return "home";
+  if(v==="home"||v==="intro")return "home";
   if(v==="glossary")return "glossary";
   if(v==="journey"||v==="stats")return "journey";
   return "practice"; }
@@ -452,6 +503,7 @@ function homeView(){
   const rc = pred.score>=31?"var(--ok)": pred.score>=25?"var(--warn)":"var(--accent)";
   const hr=new Date().getHours();
   const greet = hr<11?"おはようございます":hr<18?"こんにちは":"こんばんは";
+  const introRead=store.get("introRead",false);
   return `
   <header class="top"><h1>合格エンジン</h1><div class="days">試験まで<br><b>${daysToExam()}</b>日</div></header>
   <div class="hchips">
@@ -460,6 +512,7 @@ function homeView(){
   </div>
   <div class="greet">${greet}。<br><span>今日も一歩ずつ。</span></div>
   ${bannerHtml()}
+  ${!introRead?`<button class="cta intro-cta" style="margin-bottom:12px" onclick="startIntro()">📖 まずは3分の物語から<small>「貸金業ってなに？」を物語でやさしく予習（全6章）</small></button>`:""}
   <button class="cta ${dueTotal?"ok":""}" onclick="${dueTotal?"startDue()":"startQuick()"}" style="margin-bottom:12px">
     ${dueTotal?"⏰ 今日の復習をする":"⚡ 今日の学習をはじめる"}
     <small>${dueTotal?`忘却曲線が選んだ ${dueTotal}件（過去問${due}＋カード${cdue}）`:"未着手＋弱点をまぜてクイック10問"}</small>
@@ -697,6 +750,7 @@ function statsView(){
 
 // ---------- journey (マイページ) ----------
 const MILES=[
+ {id:"intro",label:"物語で全体像をつかむ（約3分・全6章）",due:"2026-08-01",desc:"「貸金業ってなに？」をやさしく予習。ここから合格の旅がはじまります",read:true,auto:()=>!!store.get("introRead",false)},
  {id:"apply",label:"受験申込をする",due:"2026-09-10",desc:"ネット申込は9/10 17:00締切。会社の団体申込の有無も総務に確認",link:"https://www.j-fsa.or.jp/chief/qualifying_exam/"},
  {id:"basics",label:"暗記カードで全分野を1周する",due:"2026-08-15",desc:"まずは○×カードで全体像をつかむ。この段階は理解が浅くてOK",auto:()=>CARDS.length>0&&CARDS.every(c=>chist[c.id]&&chist[c.id].a>0)},
  {id:"phase1",label:"Phase1完了: 4分野すべてを一度は演習する",due:"2026-08-31",desc:"分野別演習とやさしい解説で、まず全範囲に触れる",auto:()=>{const cs=catStats();return CATS.every(c=>cs[c].seen>=5);}},
@@ -777,26 +831,28 @@ function journeyView(){
   const milesHtml=MILES.map((m,i)=>{
     const done=mileDone(m), d=mileDays(m), isNext=i===niIdx, locked=i>niIdx, auto=!!m.auto;
     let dd;
-    if(done) dd = auto?`達成 ✓（自動判定）`:`完了 ✓`;
+    if(done) dd = auto?`達成 ✓`:`完了 ✓`;
+    else if(m.read) dd = `物語を読むと達成`;
     else if(auto) dd = `自動で判定中`;
     else if(locked) dd = `前のステップを終えると解放されます`;
     else dd = d>=0?`期限 ${m.due.slice(5).replace("-","/")}（あと${d}日）`:`<span class="over">期限超過（${m.due.slice(5).replace("-","/")}）</span>`;
     const prog = (!done&&auto)?` ・ ${mileProgress(m)}`:"";
     let chk;
-    if(auto) chk=`<div class="chk auto ${done?"done":""}">${done?"✓":"⏳"}</div>`;
+    if(auto) chk=`<div class="chk auto ${done?"done":""}">${done?"✓":(m.read?"📖":"⏳")}</div>`;
     else if(locked) chk=`<div class="chk lock">🔒</div>`;
     else chk=`<button class="chk" onclick="mileToggle('${m.id}')">${done?"✓":""}</button>`;
     const link = (m.link&&isNext)?` ・ <a href="${m.link}" target="_blank" style="color:var(--accent)">申込ページ</a>`:"";
     return `<div class="mile ${done?"done":""} ${locked&&!auto?"locked":""} ${isNext?"next":""}">
       ${chk}
       <div><div class="lb">${esc(m.label)}${isNext&&!done?' <span class="nowtag">今ここ</span>':""}</div>
-      <div class="dd ${!done&&!locked&&d<0?"over":""}">${dd}${prog}${m.desc?" ・ "+esc(m.desc):""}${link}</div></div>
+      <div class="dd ${!done&&!locked&&d<0?"over":""}">${dd}${prog}${m.desc?" ・ "+esc(m.desc):""}${link}</div>
+      ${isNext&&m.read&&!done?'<button class="btn primary" style="margin-top:8px" onclick="startIntro()">▶ 物語を読む</button>':""}</div>
     </div>`; }).join("");
   return `
   <header class="top"><h1>学習の記録</h1><div class="days">試験まで<br><b>${daysToExam()}</b>日</div></header>
   <div class="card"><h2>受験までの道のり（試験まであと${daysToExam()}日）</h2>${phaseHtml()}
     <div class="note">① 暗記カードと分野別演習で基礎 → ② 過去問を3周（やさしい解説で理解） → ③ 本番モードで仕上げ。参考書なし・このアプリだけで合格を目指せます。</div></div>
-  <div class="card"><h2>やることリスト</h2>${milesHtml}</div>
+  <div class="card"><h2>合格へのロードマップ</h2><div class="roadmap">${milesHtml}</div></div>
   <div class="statrow">
     <div class="stat"><div class="v">${streak()}<span style="font-size:12px">日</span></div><div class="l">連続学習 🔥</div></div>
     <div class="stat"><div class="v">${studied}<span style="font-size:12px">日</span></div><div class="l">学習日数</div></div>
