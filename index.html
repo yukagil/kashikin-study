@@ -217,6 +217,13 @@ header.top .days b{color:var(--primary-ink);font-size:17px;font-variant-numeric:
 .expl details summary::-webkit-details-marker{display:none}
 .expl details summary::before{content:"▸ "}
 .expl details[open] summary::before{content:"▾ "}
+.trapnote{margin-top:12px;background:var(--violet-soft);border-radius:15px;padding:14px 16px;border:1px solid var(--hairline)}
+.trapnote .cap{font-size:12px;font-weight:800;color:var(--violet-ink);margin-bottom:8px}
+.trapnote .traplist{margin:0;padding-left:18px}
+.trapnote .traplist li{font-size:13px;line-height:1.85;margin-bottom:7px}
+.trapnote .traplist li:last-child{margin-bottom:0}
+.trapnote .tmini{font-size:13px;line-height:1.85;margin:0}
+.trapnote b{color:var(--violet-ink)}
 .tiphint{font-size:11px;color:var(--sub);margin-top:10px}
 
 /* results */
@@ -427,6 +434,8 @@ select{width:100%;padding:13px 15px;border-radius:var(--radius-sm);border:none;b
 .rmnow{font-size:14px;font-weight:800;margin-top:13px}
 .rmnext{font-size:13px;color:var(--sub);margin-top:5px;font-weight:600}
 .rmnow b,.rmnext b{color:var(--primary-ink)}
+.chero-act{margin-top:14px;padding-top:14px;border-top:1px solid var(--line,rgba(128,128,128,.16))}
+.chero-act .cta{margin-bottom:0}
 .readtag{display:inline-block;font-size:10px;font-weight:800;color:var(--ok-ink);background:var(--ok-soft);border-radius:999px;padding:1px 7px;margin-left:4px}
 .miletime{display:inline-block;font-size:10.5px;font-weight:700;color:var(--sub);background:var(--bg-tint);border-radius:999px;padding:1px 8px;margin-left:2px;white-space:nowrap}
 
@@ -878,12 +887,24 @@ function homeView(){
   const rc = pred.score>=31?"var(--ok)": pred.score>=25?"var(--warn)":"var(--primary)";
   const hr=new Date().getHours();
   const greet = hr<11?"おはようございます":hr<18?"こんにちは":"こんばんは";
-  const introRead=store.get("introRead",false), stratRead=store.get("strategyRead",false);
+  // 学習コースの進捗（＝ホームの主役。次の一手はコースの次ノード）
+  const _csecs=courseSections();
+  const _cflat=[]; _csecs.forEach(s=>s.nodes.forEach(n=>_cflat.push(Object.assign({wname:s.name},n))));
+  const _cdone=_cflat.filter(n=>n.done).length, _ctot=_cflat.length, _cpct=Math.round(_cdone/_ctot*100);
+  const _ccur=_cflat.find(n=>n.current)||null;
+  const lapDone=!_ccur;
   let act;
-  if(!introRead) act={cls:"cta intro-cta",fn:"startIntro()",label:"📖 まずは3分の物語を読む",sub:"「貸金業ってなに？」を物語で予習（全6章）"};
-  else if(!stratRead) act={cls:"cta strat-cta",fn:"startStrategy()",label:"🎯 必勝法を身につける",sub:"受かる解き方を例題つきで（全6章）"};
-  else if(dueTotal) act={cls:"cta ok",fn:"startDue()",label:"⏰ 今日の復習をする",sub:`忘却曲線が選んだ ${dueTotal}件（過去問${due}＋カード${cdue}）`};
-  else act={cls:"cta",fn:"startQuick()",label:"⚡ 今日の学習をはじめる",sub:"未着手＋弱点をまぜてクイック10問"};
+  if(_ccur){
+    const op=_ccur.open;
+    if(op.indexOf("startIntro")===0) act={cls:"cta intro-cta",fn:op,label:"📖 まずは3分の物語を読む",sub:"「貸金業ってなに？」を物語で予習"};
+    else if(op.indexOf("startStrategy")===0) act={cls:"cta strat-cta",fn:op,label:"🎯 必勝法を身につける",sub:"受かる解き方を例題つきで"};
+    else act={cls:"cta",fn:op,label:`📖 ${esc(_ccur.label)}を読む`,sub:`${esc(_ccur.wname)} ・ 次の物語`};
+  } else if(dueTotal){
+    act={cls:"cta ok",fn:"startDue()",label:"⏰ 今日の復習をする",sub:`忘却曲線が選んだ ${dueTotal}件（過去問${due}＋カード${cdue}）`};
+  } else {
+    act={cls:"cta",fn:"startQuick()",label:"⚡ 今日の演習をする",sub:"未着手＋弱点をまぜてクイック10問"};
+  }
+  const actBtn=`<button class="${act.cls}" onclick="${act.fn}">${act.label}<small>${act.sub}</small></button>`;
   const unseen=ALL.length-answered;
   const coverDays=Math.max(1,daysToExam()-21);
   const perDay=Math.max(1,Math.ceil(unseen/coverDays));
@@ -892,15 +913,23 @@ function homeView(){
   const paceIcon=paceCls==="good"?"🟢":paceCls==="mid"?"🟡":"🔴";
   const paceLabel=unseen===0?"全問カバー済み":perDay<=5?"順調なペース":perDay<=12?"少し巻きたい":"ペースアップを";
   const covPct=Math.round(answered/ALL.length*100);
-  const _csecs=courseSections(); const _cflat=[]; _csecs.forEach(s=>s.nodes.forEach(n=>_cflat.push(Object.assign({wname:s.name},n))));
-  const _cci=_cflat.findIndex(n=>n.current); const _ccur=_cci>=0?_cflat[_cci]:null;
-  const _cdone=_cflat.filter(n=>n.done).length, _ctot=_cflat.length, _cpct=Math.round(_cdone/_ctot*100);
   return `
   <header class="top"><h1>合格エンジン</h1><div class="days">本番 ${examDateStr()}<br>あと<b>${daysToExam()}</b>日</div></header>
   <div class="greet">${greet}。<br><span>今日も一歩ずつ。</span></div>
   ${urgentAdminHtml()}
   <div class="eyebrow" style="margin:2px 2px 8px">いま、これだけやればOK</div>
-  <button class="${act.cls}" style="margin-bottom:16px" onclick="${act.fn}">${act.label}<small>${act.sub}</small></button>
+  ${_ccur ? `
+  <div class="card course-hero" style="margin-bottom:16px">
+    <div class="chero-head" onclick="S.view='course';render()" style="cursor:pointer">
+      <div class="eyebrow">学習コース ・ 物語を一周</div>
+      <div class="rmnow">📍 <b>${esc(_ccur.wname)}</b></div>
+      <div class="rmnext">いま：${esc(_ccur.label)}</div>
+      <div class="bar" style="margin-top:10px"><i style="width:${_cpct}%"></i></div>
+      <div class="note" style="margin-top:8px">${_cdone}/${_ctot} クリア ・ タップでコース全体を見る →</div>
+    </div>
+    <div class="chero-act">${actBtn}</div>
+  </div>` : `
+  <div style="margin-bottom:16px">${actBtn}</div>`}
   <div class="card">
     <div class="eyebrow">今日のペース</div>
     <div class="pacerow">
@@ -910,13 +939,12 @@ function homeView(){
     <div class="bar" style="margin-top:11px"><i style="width:${covPct}%"></i></div>
     <div class="pacesub">全体カバー ${answered}/${ALL.length}問（${covPct}%）・ 今日 ${todayDone}問${unseen>0?(todayDone>=perDay?" ✓ ノルマ達成！":`（あと${Math.max(0,perDay-todayDone)}問）`):""}</div>
   </div>
+  ${lapDone ? `
   <div class="card" onclick="S.view='course';render()" style="cursor:pointer">
-    <div class="eyebrow">学習コース ・ 物語を一周</div>
-    <div class="rmnow">📍 <b>${_ccur?esc(_ccur.wname):"ゴール 🏆"}</b></div>
-    <div class="rmnext">${_ccur?`いま：${esc(_ccur.label)}`:"全ステージ制覇！おめでとう"}</div>
-    <div class="bar" style="margin-top:11px"><i style="width:${_cpct}%"></i></div>
-    <div class="note" style="margin-top:8px">${_cdone}/${_ctot} クリア ・ タップでコースを開く →</div>
-  </div>
+    <div class="eyebrow">学習コース</div>
+    <div class="rmnow">🎓 <b>物語を一周 完了！</b></div>
+    <div class="note" style="margin-top:6px">${_cdone}/${_ctot} クリア ・ 読み返して復習 →</div>
+  </div>` : ``}
   <div class="statrow">
     <div class="stat"><div class="v">${streak()}<span style="font-size:12px">日</span></div><div class="l">連続 🔥${freezes>0?` ・❄️${freezes}`:""}</div></div>
     <div class="stat"><div class="v">${Object.keys(days).length}<span style="font-size:12px">日</span></div><div class="l">学習日数</div></div>
@@ -1003,7 +1031,10 @@ function quizView(){
     const ok=ans===q.answer;
     const bexp=BEGINNER[q.id];
     const condExpl=`<div class="expl"><div class="cap">📖 条文ベースの解説（論点: ${esc(q.topic)||"—"}）</div>${glossify(esc(q.explanation).replace(/\n/g,"<br>"))}</div>`;
+    const traps=ok?[]:techHints(q);
+    const trapNote=ok?"":`<div class="trapnote"><div class="cap">🎓 必勝法チェック — 次はここに注意</div>${traps.length?`<ul class="traplist">${traps.map(x=>`<li>${x}</li>`).join("")}</ul>`:`<p class="tmini">あせらず、設問が「何を選ぶ問題か」を確かめてから各肢を読み直そう。下の解説で“なぜ”を押さえれば次は取れます。</p>`}</div>`;
     fb=`<div class="verdict ${ok?"ok":"ng"}">${ok?"✅ 正解！":"❌ 不正解 — 正答は "+CIRC[q.answer]}</div>
+    ${trapNote}
     ${bexp?`<div class="expl beginner"><div class="cap">💡 やさしい解説（はじめての方へ）</div>${glossify(esc(bexp).replace(/\n/g,"<br>"))}
       <div class="tiphint">＊青い点線がついた用語はタップすると意味が出ます</div>
       <details><summary>📖 条文ベースの詳しい解説を見る</summary>${glossify(esc(q.explanation).replace(/\n/g,"<br>"))}</details>
@@ -1018,7 +1049,7 @@ function quizView(){
   <div class="card">
     <div class="qmeta"><span>第${q.exam}回（${q.year}）問${q.no}</span><span>${esc(q.topic)||CATSHORT[q.category]}</span>${histBadge(q)}</div>
     <div class="qtext">${glossify(md(q.text))}</div>
-    ${(()=>{const th=techHints(q); return th.length&&!isExam? `<details style="margin-top:10px"><summary style="cursor:pointer;font-size:12.5px;color:var(--purple);font-weight:700">🎓 この問題で使える技（${th.length}）</summary><div class="summ" style="margin-top:8px">${th.map(x=>`<p style="margin-bottom:6px;font-size:12.5px">・${x}</p>`).join("")}</div></details>`:"";})()}
+    ${(()=>{const th=techHints(q); return th.length&&!isExam? `<details style="margin-top:10px"><summary style="cursor:pointer;font-size:12.5px;color:var(--violet-ink);font-weight:700">🎓 この問題で使える技（${th.length}）</summary><div class="summ" style="margin-top:8px">${th.map(x=>`<p style="margin-bottom:6px;font-size:12.5px">・${x}</p>`).join("")}</div></details>`:"";})()}
     <div class="choices">${choiceHtml}</div>
     ${fb}
     <div class="navbtns">
