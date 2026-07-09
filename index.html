@@ -204,6 +204,11 @@ select{width:100%;padding:13px;border-radius:var(--radius-sm);border:none;box-sh
 .mile.done .lb{text-decoration:line-through;color:var(--sub);font-weight:500}
 .mile .dd{font-size:11.5px;color:var(--sub);margin-top:2px}
 .mile .dd.over{color:var(--ng);font-weight:700}
+.mile.locked{opacity:.48}
+.mile.next{background:var(--accent-soft);margin:0 -8px;padding:13px 8px;border-radius:12px;border-bottom:none}
+.mile .chk.auto,.mile .chk.lock{display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--sub);background:var(--bg);box-shadow:inset 0 0 0 2px var(--line)}
+.mile.done .chk.auto{background:var(--ok);color:#fff;box-shadow:none}
+.nowtag{display:inline-block;background:var(--accent);color:#fff;border-radius:999px;font-size:10px;font-weight:800;padding:1px 8px;margin-left:6px;vertical-align:middle}
 .phaserow{display:flex;gap:6px;margin:12px 0 4px}
 .phaserow .ph{flex:1;border-radius:10px;padding:8px 4px;text-align:center;font-size:10.5px;font-weight:600;background:var(--bg);color:var(--sub)}
 .phaserow .ph.cur{background:var(--accent);color:#fff;font-weight:800}
@@ -282,7 +287,19 @@ let chist = store.get("chist",{});          // cardId -> {a,c,w,t,iv,due}
 let examResults = store.get("examResults",[]);
 let days = store.get("days",{});            // "YYYY-MM-DD" -> 解答数（学習カレンダー用）
 let miles = store.get("miles",{});          // milestoneId -> 完了日時
-const save = ()=>{ store.set("hist",hist); store.set("chist",chist); store.set("examResults",examResults); store.set("days",days); store.set("miles",miles); };
+const STORE_VERSION = 3;
+const save = ()=>{ store.set("hist",hist); store.set("chist",chist); store.set("examResults",examResults); store.set("days",days); store.set("miles",miles); store.set("ver",STORE_VERSION); };
+// 将来のリリースで学習記録を失わないためのマイグレーション。localStorageは更新をまたいで残るので、
+// スキーマ変更時はここで旧データを新形式へ変換する（データは消さない）。
+function migrateStore(){
+  let v=store.get("ver",1);
+  if(v<3){
+    // v3: 一部マイルストーンを自動判定化。旧「手動チェック済み」フラグのうち自動項目分を掃除
+    if(miles && typeof miles==="object"){ ["basics","phase1","phase2","goal35","text"].forEach(id=>{ if(miles[id]!==undefined) delete miles[id]; }); }
+    v=3;
+  }
+  store.set("ver",STORE_VERSION); save();
+}
 
 // ---------- data index ----------
 const ALL = [];
@@ -585,7 +602,6 @@ function finishExam(){
     cat[q.category].n++; if(ok){score++;cat[q.category].c++;}
     const h=hist[id]||{}; srsUpdate(h,ok); hist[id]=h; });
   examResults.push({exam:ss.examNo,score,date:new Date().toISOString().slice(0,10)});
-  if(score>=35 && !miles.goal35) miles.goal35=now();
   save();
   S.lastExam={score,cat,examNo:ss.examNo,qids:ss.qids,answers:ss.answers};
   S.session=null; S.view="examResult"; render();
@@ -682,24 +698,43 @@ function statsView(){
 // ---------- journey (マイページ) ----------
 const MILES=[
  {id:"apply",label:"受験申込をする",due:"2026-09-10",desc:"ネット申込は9/10 17:00締切。会社の団体申込の有無も総務に確認",link:"https://www.j-fsa.or.jp/chief/qualifying_exam/"},
- {id:"basics",label:"暗記カードで全分野を1周する",due:"2026-08-15",desc:"まずは○×カードで全体像をつかむ。この段階は理解が浅くてOK"},
- {id:"phase1",label:"Phase1完了: 4分野すべてを一度は演習する",due:"2026-08-31",desc:"分野別演習とやさしい解説で、まず全範囲に触れる"},
- {id:"phase2",label:"Phase2完了: 過去問5年分を3周する",due:"2026-10-18",desc:"間違えた問題はやさしい解説を読み、理由を1行で言えるまで"},
- {id:"goal35",label:"本番モードで35点以上を取る",due:"2026-11-01",desc:"取れたら自動でチェックされる"},
+ {id:"basics",label:"暗記カードで全分野を1周する",due:"2026-08-15",desc:"まずは○×カードで全体像をつかむ。この段階は理解が浅くてOK",auto:()=>CARDS.length>0&&CARDS.every(c=>chist[c.id]&&chist[c.id].a>0)},
+ {id:"phase1",label:"Phase1完了: 4分野すべてを一度は演習する",due:"2026-08-31",desc:"分野別演習とやさしい解説で、まず全範囲に触れる",auto:()=>{const cs=catStats();return CATS.every(c=>cs[c].seen>=5);}},
+ {id:"phase2",label:"Phase2完了: 過去問5年分を3周する",due:"2026-10-18",desc:"間違えた問題はやさしい解説を読み、理由を1行で言えるまで",auto:()=>{const off=ALL.filter(q=>q.exam>=16&&q.exam<=20);const a=off.reduce((s,q)=>s+((hist[q.id]&&hist[q.id].a)||0),0);return off.length>0&&a>=off.length*3;}},
+ {id:"goal35",label:"本番モードで35点以上を取る",due:"2026-11-01",desc:"本番モードで35点を取ると自動で達成になります",auto:()=>examResults.some(e=>e.score>=35)},
  {id:"ticket",label:"受験票を受け取る",due:"2026-10-30",desc:"10/23発送。届かなければ協会に連絡"},
  {id:"final",label:"前日準備: 会場・HB鉛筆・時計・受験票",due:"2026-11-14",desc:"当日は12:15集合・13:00開始"},
  {id:"exam",label:"本番! 11/15(日) 13:00",due:"2026-11-15",desc:"落ち着いて。31点でいい試験"},
 ];
 function mileDays(m){ return Math.ceil((new Date(m.due+"T23:59:59+09:00")-new Date())/DAY); }
-function nextMile(){ return MILES.find(m=>!miles[m.id]); }
-function mileToggle(id){ if(miles[id]) delete miles[id]; else miles[id]=now(); save(); render(); }
+function mileDone(m){ return m.auto? !!m.auto() : !!miles[m.id]; }
+function nextMileIdx(){ return MILES.findIndex(m=>!mileDone(m)); }
+function nextMile(){ const i=nextMileIdx(); return i<0?null:MILES[i]; }
+function mileProgress(m){
+  if(!m.auto) return "";
+  if(m.id==="basics"){ const seen=CARDS.filter(c=>chist[c.id]&&chist[c.id].a>0).length; return `カード ${seen}/${CARDS.length}枚`; }
+  if(m.id==="phase1"){ const cs=catStats(); const t=CATS.filter(c=>cs[c].seen>=5).length; return `${t}/4分野に着手`; }
+  if(m.id==="phase2"){ const off=ALL.filter(q=>q.exam>=16&&q.exam<=20); const a=off.reduce((s,q)=>s+((hist[q.id]&&hist[q.id].a)||0),0); return `${Math.min(100,Math.round(a/(off.length*3)*100))}%（3周ぶん）`; }
+  if(m.id==="goal35"){ const best=examResults.reduce((b,e)=>Math.max(b,e.score),0); return `最高 ${best}点`; }
+  return "";
+}
+function mileToggle(id){
+  const i=MILES.findIndex(m=>m.id===id); if(i<0)return;
+  const m=MILES[i]; if(m.auto) return;
+  const nx=nextMileIdx(); const ni = nx<0?MILES.length:nx;
+  if(i>ni) return;
+  if(miles[id]) delete miles[id]; else miles[id]=now();
+  save(); render();
+}
 function bannerHtml(){
   const m=nextMile(); if(!m) return "";
-  const d=mileDays(m); const urgent=d<=14;
-  return `<div class="banner"><div class="cap">次のやること ${urgent?"⚠️":""}</div>
-    <div class="tt">${esc(m.label)}${d>=0?`（あと${d}日・${m.due.slice(5).replace("-","/")}期限）`:"（期限超過！）"}</div>
-    <button onclick="S.view='journey';render()">マイページで確認 →</button>
-    <button onclick="mileToggle('${m.id}')">済みにする ✓</button></div>`;
+  const d=mileDays(m); const urgent=!m.auto && d<=14;
+  const sub = m.auto? `自動で達成を判定します ・ ${mileProgress(m)}` : (d>=0?`あと${d}日・${m.due.slice(5).replace("-","/")}期限`:"期限超過！");
+  return `<div class="banner"><div class="cap">次のステップ ${urgent?"⚠️":""}</div>
+    <div class="tt">${esc(m.label)}</div>
+    <div style="font-size:11.5px;opacity:.92;margin:2px 0 10px">${sub}</div>
+    <button onclick="S.view='journey';render()">記録で確認 →</button>
+    ${m.auto?"":`<button onclick="mileToggle('${m.id}')">済みにする ✓</button>`}</div>`;
 }
 function phaseHtml(){
   const t=new Date();
@@ -738,13 +773,24 @@ function journeyView(){
     return `<div class="catline"><div class="t"><span>${CATSHORT[c]}</span><span>${s.seen}/${s.n}問 ・ 正答率${s.a?pct+"%":"—"}</span></div><div class="bar"><i style="width:${pct}%"></i></div></div>`;}).join("");
   const ts=topicStats();
   const weakTopics=Object.entries(ts).filter(([k,v])=>v.a>=3&&v.c/v.a<0.7).sort((x,y)=>x[1].c/x[1].a-y[1].c/y[1].a).slice(0,6);
-  const milesHtml=MILES.map(m=>{
-    const done=!!miles[m.id], d=mileDays(m);
-    const dd = done? `完了 ✓` : d>=0? `期限 ${m.due.slice(5).replace("-","/")}（あと${d}日）` : `<span class="over">期限超過（${m.due.slice(5).replace("-","/")}）</span>`;
-    return `<div class="mile ${done?"done":""}">
-      <button class="chk" onclick="mileToggle('${m.id}')">${done?"✓":""}</button>
-      <div><div class="lb">${esc(m.label)}</div>
-      <div class="dd ${!done&&d<0?"over":""}">${dd}${m.desc?" ・ "+esc(m.desc):""}${m.link?` ・ <a href="${m.link}" target="_blank" style="color:var(--accent)">申込ページ</a>`:""}</div></div>
+  const nx=nextMileIdx(); const niIdx = nx<0?MILES.length:nx;
+  const milesHtml=MILES.map((m,i)=>{
+    const done=mileDone(m), d=mileDays(m), isNext=i===niIdx, locked=i>niIdx, auto=!!m.auto;
+    let dd;
+    if(done) dd = auto?`達成 ✓（自動判定）`:`完了 ✓`;
+    else if(auto) dd = `自動で判定中`;
+    else if(locked) dd = `前のステップを終えると解放されます`;
+    else dd = d>=0?`期限 ${m.due.slice(5).replace("-","/")}（あと${d}日）`:`<span class="over">期限超過（${m.due.slice(5).replace("-","/")}）</span>`;
+    const prog = (!done&&auto)?` ・ ${mileProgress(m)}`:"";
+    let chk;
+    if(auto) chk=`<div class="chk auto ${done?"done":""}">${done?"✓":"⏳"}</div>`;
+    else if(locked) chk=`<div class="chk lock">🔒</div>`;
+    else chk=`<button class="chk" onclick="mileToggle('${m.id}')">${done?"✓":""}</button>`;
+    const link = (m.link&&isNext)?` ・ <a href="${m.link}" target="_blank" style="color:var(--accent)">申込ページ</a>`:"";
+    return `<div class="mile ${done?"done":""} ${locked&&!auto?"locked":""} ${isNext?"next":""}">
+      ${chk}
+      <div><div class="lb">${esc(m.label)}${isNext&&!done?' <span class="nowtag">今ここ</span>':""}</div>
+      <div class="dd ${!done&&!locked&&d<0?"over":""}">${dd}${prog}${m.desc?" ・ "+esc(m.desc):""}${link}</div></div>
     </div>`; }).join("");
   return `
   <header class="top"><h1>学習の記録</h1><div class="days">試験まで<br><b>${daysToExam()}</b>日</div></header>
@@ -824,7 +870,7 @@ function fallbackCopy(t,done){
 
 // ---------- backup ----------
 function exportData(){
-  const blob=new Blob([JSON.stringify({v:2,hist,chist,examResults,exported:new Date().toISOString()})],{type:"application/json"});
+  const blob=new Blob([JSON.stringify({v:STORE_VERSION,hist,chist,examResults,days,miles,exported:new Date().toISOString()})],{type:"application/json"});
   const a=document.createElement("a"); a.href=URL.createObjectURL(blob);
   a.download=`kashikin_backup_${new Date().toISOString().slice(0,10)}.json`; a.click();
 }
@@ -833,12 +879,15 @@ function importData(ev){
   const r=new FileReader();
   r.onload=()=>{ try{ const d=JSON.parse(r.result);
       if(!d.hist) throw 0;
-      hist=d.hist; chist=d.chist||{}; examResults=d.examResults||[]; save();
-      alert("復元しました"); S.view="home"; render();
+      hist=d.hist; chist=d.chist||{}; examResults=d.examResults||[];
+      if(d.days) days=d.days; if(d.miles) miles=d.miles;
+      save(); migrateStore();
+      alert("復元しました（学習履歴・連続日数・やることを含む）"); S.view="home"; render();
     }catch(e){ alert("ファイルを読み込めませんでした"); } };
   r.readAsText(f);
 }
 
+migrateStore();
 render();
 </script>
 <script>
