@@ -376,14 +376,22 @@ select{width:100%;padding:13px 15px;border-radius:var(--radius-sm);border:none;b
 .nbacts{display:flex;gap:8px}
 .nbbtn{width:auto;padding:8px 13px;font-size:12.5px}
 
-/* 冒険コース（ゲームマップ・うねる一本道） */
-.cworld{display:flex;align-items:center;gap:9px;font-size:14px;font-weight:800;color:var(--wc,var(--primary-ink));margin:26px 4px 2px}
+/* 冒険コース（任天堂風オーバーワールド） */
+.cworld{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:800;color:var(--wc,var(--primary-ink));margin:26px 4px 6px}
 .cworld .wnum{font-size:9.5px;font-weight:800;color:#fff;background:var(--wc,var(--primary));border-radius:999px;padding:3px 9px;letter-spacing:.04em;flex:none}
+.cworld .wbadge{font-size:16px;flex:none}
 .cworld .wttl{flex:1;min-width:0}
 .cworld .wprog{font-size:11px;font-weight:800;color:var(--sub)}
-.coursewrap{position:relative;margin:0 auto;max-width:480px}
-.croad{position:absolute;inset:0;z-index:0}
-.cnode{position:absolute;width:118px;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;z-index:1}
+.cscene{position:relative;margin:0 auto;max-width:480px;border-radius:22px;overflow:hidden;
+  background:color-mix(in srgb,var(--wc) 9%, var(--card));box-shadow:inset 0 0 0 1px var(--hairline), var(--shadow-sm)}
+.cdeco{position:absolute;inset:0;z-index:0;pointer-events:none}
+.cdeco .dec{position:absolute;transform:translate(-50%,-50%);opacity:.5}
+.croad{position:absolute;inset:0;z-index:1}
+.croad .road{stroke:color-mix(in srgb,var(--wc) 30%, var(--card))}
+.croad .roadc{stroke:var(--card);opacity:.9}
+.cflag{position:absolute;left:50%;transform:translateX(-50%);z-index:2;font-size:34px;filter:drop-shadow(0 3px 2px rgba(0,0,0,.15))}
+.avatar{position:absolute;top:-32px;font-size:30px;z-index:3;animation:sbob 1.1s ease-in-out infinite;filter:drop-shadow(0 3px 2px rgba(0,0,0,.2))}
+.cnode{position:absolute;width:118px;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;z-index:2}
 .cnode .circle{width:70px;height:70px;border-radius:50%;border:none;font-size:28px;cursor:pointer;background:var(--card);box-shadow:0 5px 0 var(--line), var(--shadow-sm);color:var(--ink);transition:transform .08s}
 .cnode .circle:active{transform:translateY(4px)}
 .cnode.done .circle{background:var(--ok);color:#fff;box-shadow:0 5px 0 var(--ok-strong)}
@@ -650,28 +658,45 @@ function courseView(){
   const STEP=118, R=34;
   const WC=["var(--primary)","var(--teal)","var(--violet)","var(--gold)","var(--ok)","var(--ng)","var(--primary)","var(--teal)"];
   let flatN=0, doneN=0; secs.forEach(s=>s.nodes.forEach(n=>{flatN++; if(n.done)doneN++;}));
+  const THEMES=[
+    {n:"草原",col:"#46a758",deco:["🌳","🌿","🌸","🍄","🦋","🌳"]},
+    {n:"砂漠",col:"#e0a015",deco:["🌵","🪨","☀️","🐫","🌵","🪨"]},
+    {n:"水辺",col:"#2aa7d8",deco:["🌊","🐚","⛵","🐠","🌊","🐚"]},
+    {n:"森",col:"#2f8f5b",deco:["🌲","🍄","🦉","🍂","🌲","🐿️"]},
+    {n:"雪山",col:"#6aa0d8",deco:["⛰️","❄️","☃️","🏔️","❄️","⛰️"]},
+    {n:"空",col:"#7c8cf0",deco:["☁️","⭐","🌈","🎈","☁️","⭐"]},
+    {n:"城",col:"#8b5cf6",deco:["🏰","🔥","⚔️","👑","🛡️","🔥"]},
+  ];
   const blocks=secs.map((sec,si)=>{
-    const N=sec.nodes.length, H=N*STEP, col=WC[si%WC.length];
+    const th=THEMES[si%THEMES.length];
+    const N=sec.nodes.length, H=N*STEP, SH=H+52, col=th.col;
+    const last=si===secs.length-1;
     const cleared=sec.nodes.filter(n=>n.done).length;
-    const pts=sec.nodes.map((n,i)=>({x:+(50+26*Math.sin(i*Math.PI/2)).toFixed(2), y:i*STEP+R+10}));
-    const d="M "+pts.map(p=>`${p.x} ${p.y}`).join(" L ");
+    const pts=sec.nodes.map((n,i)=>({x:+(50+26*Math.sin(i*Math.PI/2)).toFixed(2), y:i*STEP+R+12}));
+    const d="M "+pts.map(p=>`${p.x} ${p.y}`).join(" L ")+` L 50 ${H+22}`;
+    const deco=sec.nodes.map((n,i)=>{
+      const p=pts[i]; const dx=p.x>50?p.x-30:p.x+30; const em=th.deco[i%th.deco.length]; const sz=[26,22,30,24][i%4];
+      return `<span class="dec" style="left:${dx}%;top:${p.y-8}px;font-size:${sz}px">${em}</span>`;
+    }).join("");
     const nodes=sec.nodes.map((n,i)=>{
       const cls=n.done?"done":n.current?"current":n.locked?"locked":"open";
       const face=n.done?(n.t==="quiz"?(n.stars?"⭐".repeat(n.stars):"✓"):"✓"):(n.locked?"🔒":n.ic);
       const p=pts[i];
       return `<div class="cnode ${cls}" style="left:${p.x}%;top:${p.y-R}px">
-        ${n.current?`<div class="startbub">START</div>`:""}
+        ${n.current?`<div class="avatar">🧑‍🎓</div>`:""}
         <button class="circle" style="--wc:${col}" ${n.locked?"disabled":`onclick="${n.open}"`}>${face}</button>
         <div class="clabel">${esc(n.label)}</div>
       </div>`;
     }).join("");
-    return `<div class="cworld" style="--wc:${col}"><span class="wnum">WORLD ${si+1}</span><span class="wttl">${esc((sec.title.split("・")[1]||sec.title).trim())}</span><span class="wprog">${cleared}/${N}</span></div>
-    <div class="coursewrap" style="height:${H}px">
-      <svg class="croad" viewBox="0 0 100 ${H}" preserveAspectRatio="none" width="100%" height="${H}" aria-hidden="true">
-        <path d="${d}" fill="none" stroke="var(--line)" stroke-width="15" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
-        <path d="${d}" fill="none" stroke="${col}" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="0.1 11" opacity=".55" vector-effect="non-scaling-stroke"/>
+    return `<div class="cworld" style="--wc:${col}"><span class="wnum">WORLD ${si+1}</span><span class="wbadge">${th.deco[0]}</span><span class="wttl">${esc((sec.title.split("・")[1]||sec.title).trim())}</span><span class="wprog">${cleared}/${N}</span></div>
+    <div class="cscene" style="height:${SH}px;--wc:${col}">
+      <div class="cdeco">${deco}</div>
+      <svg class="croad" viewBox="0 0 100 ${SH}" preserveAspectRatio="none" width="100%" height="${SH}" aria-hidden="true">
+        <path class="road" d="${d}" fill="none" stroke-width="17" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
+        <path class="roadc" d="${d}" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="0.1 10" vector-effect="non-scaling-stroke"/>
       </svg>
       ${nodes}
+      <div class="cflag" style="top:${H+2}px">${last?"🏰":"🚩"}</div>
     </div>`;
   }).join("");
   return `
