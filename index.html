@@ -376,6 +376,23 @@ select{width:100%;padding:13px 15px;border-radius:var(--radius-sm);border:none;b
 .nbacts{display:flex;gap:8px}
 .nbbtn{width:auto;padding:8px 13px;font-size:12.5px}
 
+/* ワールドセレクト */
+.wscard{display:flex;align-items:center;gap:13px;width:100%;border:none;border-radius:18px;padding:14px;margin-bottom:11px;cursor:pointer;text-align:left;
+  background:color-mix(in srgb,var(--wc) 12%, var(--card));box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--wc) 30%, transparent), var(--shadow-sm);transition:transform .06s}
+.wscard:active{transform:scale(.99)}
+.wscard.locked{opacity:.5;cursor:not-allowed;background:var(--bg-tint);box-shadow:inset 0 0 0 1.5px var(--line)}
+.wscard .wsic{width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:27px;flex:none;background:color-mix(in srgb,var(--wc) 22%, var(--card))}
+.wscard .wsmid{flex:1;min-width:0}
+.wscard .wshd{display:flex;align-items:center;gap:8px;margin-bottom:3px}
+.wscard .wsnum{font-size:9.5px;font-weight:800;color:#fff;background:var(--wc);border-radius:999px;padding:2px 8px;letter-spacing:.04em}
+.wscard.locked .wsnum{background:var(--faint)}
+.wstag{font-size:10.5px;font-weight:800}
+.wstag.done{color:var(--ok-ink)} .wstag.go{color:var(--wc)} .wstag.lock{color:var(--sub)}
+.wscard .wsttl{font-size:15px;font-weight:800;margin-bottom:6px}
+.wscard .bar{height:8px}
+.wscard .bar i{background:var(--wc)}
+.wscard .wsprog{font-size:11px;color:var(--sub);margin-top:5px;font-weight:600}
+
 /* 冒険コース（任天堂風オーバーワールド） */
 .cworld{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:800;color:var(--wc,var(--primary-ink));margin:26px 4px 6px}
 .cworld .wnum{font-size:9.5px;font-weight:800;color:#fff;background:var(--wc,var(--primary));border-radius:999px;padding:3px 9px;letter-spacing:.04em;flex:none}
@@ -653,10 +670,43 @@ function courseSections(){
   flat.forEach((n,i)=>{ n.locked=i>fo; n.current=i===fo; });
   return secs;
 }
-function courseView(){
+const CWMETA=[["#46a758","🌳"],["#e0a015","🌵"],["#2aa7d8","🌊"],["#2f8f5b","🌲"],["#6aa0d8","⛰️"],["#7c8cf0","☁️"],["#8b5cf6","🏰"]];
+function enterWorld(si){
+  if(si<0){ const secs=courseSections(); let idx=0; secs.forEach((s,i)=>{ if(s.nodes.some(n=>n.current)) idx=i; }); si=idx; }
+  S.view="coursemap"; S.scrollWorld=si; render();
+}
+function courseView(){ // ワールドセレクト（全体像）
+  const secs=courseSections();
+  let flatN=0, doneN=0; secs.forEach(s=>s.nodes.forEach(n=>{flatN++; if(n.done)doneN++;}));
+  const cards=secs.map((sec,si)=>{
+    const m=CWMETA[si%CWMETA.length], total=sec.nodes.length, cl=sec.nodes.filter(n=>n.done).length;
+    const first=sec.nodes[0], pct=Math.round(cl/total*100);
+    const state = cl===total?"done" : (!first.locked?"open":"locked");
+    const tag = state==="done"?'<span class="wstag done">クリア ✓</span>' : state==="locked"?'<span class="wstag lock">🔒 未開放</span>' : '<span class="wstag go">▶ 入る</span>';
+    const ttl=(sec.title.split("・")[1]||sec.title).trim();
+    return `<button class="wscard ${state}" style="--wc:${m[0]}" ${state==="locked"?"disabled":`onclick="enterWorld(${si})"`}>
+      <div class="wsic">${m[1]}</div>
+      <div class="wsmid">
+        <div class="wshd"><span class="wsnum">WORLD ${si+1}</span>${tag}</div>
+        <div class="wsttl">${esc(ttl)}</div>
+        <div class="bar"><i style="width:${pct}%"></i></div>
+        <div class="wsprog">${cl} / ${total} クリア</div>
+      </div>
+    </button>`;
+  }).join("");
+  const allPct=Math.round(doneN/flatN*100);
+  return `
+  <header class="top"><h1>冒険コース</h1><div class="days">クリア<br><b>${doneN}</b>/${flatN}</div></header>
+  <div class="card"><div class="eyebrow">ぜんたいの進み（全${secs.length}ワールド）</div>
+    <div class="bar" style="height:12px"><i style="width:${allPct}%"></i></div>
+    <div class="note" style="margin-top:8px">ワールドを選んで冒険へ。まず物語で全体像 → 過去問を制覇して 🏆 ゴールを目指そう。</div></div>
+  <button class="cta" style="margin-bottom:14px" onclick="enterWorld(-1)">🗺 続きから道を見る</button>
+  ${cards}
+  <div class="cgoal">🏆<div>ゴール ・ 合格！</div></div>`;
+}
+function courseMapView(){
   const secs=courseSections();
   const STEP=118, R=34;
-  const WC=["var(--primary)","var(--teal)","var(--violet)","var(--gold)","var(--ok)","var(--ng)","var(--primary)","var(--teal)"];
   let flatN=0, doneN=0; secs.forEach(s=>s.nodes.forEach(n=>{flatN++; if(n.done)doneN++;}));
   const THEMES=[
     {n:"草原",col:"#46a758",deco:["🌳","🌿","🌸","🍄","🦋","🌳"]},
@@ -688,7 +738,7 @@ function courseView(){
         <div class="clabel">${esc(n.label)}</div>
       </div>`;
     }).join("");
-    return `<div class="cworld" style="--wc:${col}"><span class="wnum">WORLD ${si+1}</span><span class="wbadge">${th.deco[0]}</span><span class="wttl">${esc((sec.title.split("・")[1]||sec.title).trim())}</span><span class="wprog">${cleared}/${N}</span></div>
+    return `<div id="cw-${si}"><div class="cworld" style="--wc:${col}"><span class="wnum">WORLD ${si+1}</span><span class="wbadge">${th.deco[0]}</span><span class="wttl">${esc((sec.title.split("・")[1]||sec.title).trim())}</span><span class="wprog">${cleared}/${N}</span></div>
     <div class="cscene" style="height:${SH}px;--wc:${col}">
       <div class="cdeco">${deco}</div>
       <svg class="croad" viewBox="0 0 100 ${SH}" preserveAspectRatio="none" width="100%" height="${SH}" aria-hidden="true">
@@ -697,11 +747,12 @@ function courseView(){
       </svg>
       ${nodes}
       <div class="cflag" style="top:${H+2}px">${last?"🏰":"🚩"}</div>
-    </div>`;
+    </div></div>`;
   }).join("");
   return `
+  <button class="back" onclick="S.view='course';render()">← ワールド選択</button>
   <header class="top"><h1>冒険コース</h1><div class="days">クリア<br><b>${doneN}</b>/${flatN}</div></header>
-  <p class="note" style="margin:0 0 4px">スタートから一本道。まず物語で全体像 → 過去問ステージを制覇して合格へ。⭐は正答数（10問中7・9以上で増）。</p>
+  <p class="note" style="margin:0 0 4px">スタートから一本道。⭐は正答数（10問中7・9以上で増）。</p>
   ${blocks}
   <div class="cgoal">🏆<div>ゴール ・ 合格！</div></div>
   <div class="footer-note">自由に解きたいときは「問題」タブへ。受験手続きは<a href="#" onclick="S.view='roadmap';render();return false" style="color:var(--primary-ink);font-weight:700">ロードマップ</a>で確認できます。</div>`;
@@ -867,14 +918,15 @@ function render(){
   const v=S.view;
   el.innerHTML = v==="home"?homeView(): v==="intro"?introView(): v==="strategy"?strategyView(): v==="practice"?practiceView(): v==="quiz"?quizView(): v==="examResult"?examResultView():
                  v==="stats"?statsView(): v==="cards"?cardsView(): v==="cardPick"?cardPickView():
-                 v==="journey"?journeyView(): v==="roadmap"?roadmapView(): v==="course"?courseView(): v==="notebook"?notebookView(): v==="storylib"?storyLibView(): v==="story"?storyView(): v==="tech"?techView(): v==="glossary"?glossaryView():"";
+                 v==="journey"?journeyView(): v==="roadmap"?roadmapView(): v==="course"?courseView(): v==="coursemap"?courseMapView(): v==="notebook"?notebookView(): v==="storylib"?storyLibView(): v==="story"?storyView(): v==="tech"?techView(): v==="glossary"?glossaryView():"";
   renderTabbar();
   window.scrollTo(0,0);
+  if(v==="coursemap"&&S.scrollWorld!=null){ const el=document.getElementById("cw-"+S.scrollWorld); if(el) setTimeout(()=>el.scrollIntoView({block:"start"}),0); S.scrollWorld=null; }
 }
 const TABS=[["home","🏠","ホーム"],["practice","✏️","問題"],["glossary","📚","用語"],["course","🗺","コース"]];
 function currentTab(){ const v=S.view;
   if(v==="glossary")return "glossary";
-  if(v==="course"||v==="roadmap")return "course";
+  if(v==="course"||v==="coursemap"||v==="roadmap")return "course";
   if(v==="practice"||v==="quiz"||v==="examResult"||v==="cards"||v==="cardPick"||v==="tech"||v==="notebook"||v==="storylib"||v==="story")return "practice";
   return "home"; }
 function tabGo(t){ clearInterval(timerHandle); S.session=null; S.cardSession=null; S.view=t; render(); }
