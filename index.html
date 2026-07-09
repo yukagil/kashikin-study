@@ -343,6 +343,19 @@ select{width:100%;padding:13px 15px;border-radius:var(--radius-sm);border:none;b
 .exq{font-size:14px;line-height:1.85}
 .expt{font-size:12.5px;color:var(--sub);margin-top:9px;font-weight:700}
 
+/* pace & roadmap-mini (home) */
+.pacerow{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.pacebadge{font-size:13px;font-weight:800;border-radius:999px;padding:5px 13px}
+.pacebadge.good{background:var(--ok-soft);color:var(--ok-ink)}
+.pacebadge.mid{background:var(--gold-soft);color:var(--gold-ink)}
+.pacebadge.bad{background:var(--ng-soft);color:var(--ng-ink)}
+.pacequota{font-size:12.5px;font-weight:700;color:var(--sub)}
+.pacesub{font-size:12px;color:var(--sub);margin-top:8px}
+.rmnow{font-size:14px;font-weight:800;margin-top:13px}
+.rmnext{font-size:13px;color:var(--sub);margin-top:5px;font-weight:600}
+.rmnow b,.rmnext b{color:var(--primary-ink)}
+.miletime{display:inline-block;font-size:10.5px;font-weight:700;color:var(--sub);background:var(--bg-tint);border-radius:999px;padding:1px 8px;margin-left:2px;white-space:nowrap}
+
 /* bottom tab bar */
 .tabbar{position:fixed;left:0;right:0;bottom:0;z-index:80;background:var(--tabbar);
   backdrop-filter:saturate(1.8) blur(18px);-webkit-backdrop-filter:saturate(1.8) blur(18px);
@@ -551,7 +564,9 @@ function endOfToday(){ const d=new Date(); d.setHours(23,59,59,999); return d.ge
 function srsUpdate(h, ok){ h.a=(h.a||0)+1; if(ok)h.c=(h.c||0)+1; h.w=!ok; h.t=now();
   h.iv = ok? Math.min((h.iv??-1)+1, IV.length-1) : 0; h.due = now()+IV[h.iv]*DAY;
   const dk=new Date().toISOString().slice(0,10); days[dk]=(days[dk]||0)+1; }
-function daysToExam(){ return Math.max(0,Math.ceil((new Date("2026-11-15T13:00:00+09:00")-new Date())/DAY)); }
+const EXAM_DATE=new Date("2026-11-15T13:00:00+09:00");
+function daysToExam(){ return Math.max(0,Math.ceil((EXAM_DATE-new Date())/DAY)); }
+function examDateStr(){ const w=["日","月","火","水","木","金","土"][EXAM_DATE.getDay()]; return `${EXAM_DATE.getMonth()+1}/${EXAM_DATE.getDate()}(${w})`; }
 function shuffle(a){ for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
 function acc(q){ const h=hist[q.id]; return h&&h.a? h.c/h.a : null; }
 
@@ -579,16 +594,16 @@ function render(){
   const v=S.view;
   el.innerHTML = v==="home"?homeView(): v==="intro"?introView(): v==="strategy"?strategyView(): v==="practice"?practiceView(): v==="quiz"?quizView(): v==="examResult"?examResultView():
                  v==="stats"?statsView(): v==="cards"?cardsView(): v==="cardPick"?cardPickView():
-                 v==="journey"?journeyView(): v==="tech"?techView(): v==="glossary"?glossaryView():"";
+                 v==="journey"?journeyView(): v==="roadmap"?roadmapView(): v==="tech"?techView(): v==="glossary"?glossaryView():"";
   renderTabbar();
   window.scrollTo(0,0);
 }
-const TABS=[["home","🏠","ホーム"],["practice","✏️","問題"],["glossary","📚","用語"],["journey","📈","記録"]];
+const TABS=[["home","🏠","ホーム"],["practice","✏️","問題"],["glossary","📚","用語"],["roadmap","🗺","計画"]];
 function currentTab(){ const v=S.view;
-  if(v==="home"||v==="intro"||v==="strategy")return "home";
   if(v==="glossary")return "glossary";
-  if(v==="journey"||v==="stats")return "journey";
-  return "practice"; }
+  if(v==="roadmap")return "roadmap";
+  if(v==="practice"||v==="quiz"||v==="examResult"||v==="cards"||v==="cardPick"||v==="tech")return "practice";
+  return "home"; }
 function tabGo(t){ clearInterval(timerHandle); S.session=null; S.cardSession=null; S.view=t; render(); }
 function renderTabbar(){
   const nav=document.getElementById("tabbar"); if(!nav) return;
@@ -606,7 +621,7 @@ function homeView(){
   const due=dueQuestions().length, cdue=dueCards().length, weak=weakList().length;
   const dueTotal=due+cdue;
   const goalPct=Math.min(100,Math.round(pred.score/50*100));
-  const rc = pred.score>=31?"var(--ok)": pred.score>=25?"var(--warn)":"var(--accent)";
+  const rc = pred.score>=31?"var(--ok)": pred.score>=25?"var(--warn)":"var(--primary)";
   const hr=new Date().getHours();
   const greet = hr<11?"おはようございます":hr<18?"こんにちは":"こんばんは";
   const introRead=store.get("introRead",false), stratRead=store.get("strategyRead",false);
@@ -615,16 +630,44 @@ function homeView(){
   else if(!stratRead) act={cls:"cta strat-cta",fn:"startStrategy()",label:"🎯 必勝法を身につける",sub:"受かる解き方を例題つきで（全6章）"};
   else if(dueTotal) act={cls:"cta ok",fn:"startDue()",label:"⏰ 今日の復習をする",sub:`忘却曲線が選んだ ${dueTotal}件（過去問${due}＋カード${cdue}）`};
   else act={cls:"cta",fn:"startQuick()",label:"⚡ 今日の学習をはじめる",sub:"未着手＋弱点をまぜてクイック10問"};
+  const unseen=ALL.length-answered;
+  const coverDays=Math.max(1,daysToExam()-21);
+  const perDay=Math.max(1,Math.ceil(unseen/coverDays));
+  const todayKey=new Date().toISOString().slice(0,10); const todayDone=days[todayKey]||0;
+  const paceCls=unseen===0?"good":perDay<=5?"good":perDay<=12?"mid":"bad";
+  const paceIcon=paceCls==="good"?"🟢":paceCls==="mid"?"🟡":"🔴";
+  const paceLabel=unseen===0?"全問カバー済み":perDay<=5?"順調なペース":perDay<=12?"少し巻きたい":"ペースアップを";
+  const covPct=Math.round(answered/ALL.length*100);
+  const rmi=nextMileIdx(); const rmCur=rmi<0?null:MILES[rmi]; const rmNext=(rmi>=0&&rmi+1<MILES.length)?MILES[rmi+1]:null;
+  const rmNextHtml = rmNext?`⏭ <b>次:</b> ${esc(rmNext.label)}`:(rmCur?`⏭ <b>次:</b> 本番で合格 🏆`:"");
   return `
-  <header class="top"><h1>合格エンジン</h1><div class="days">試験まで<br><b>${daysToExam()}</b>日</div></header>
-  <div class="hchips">
-    <div class="hchip flame"><span class="em">🔥</span>${streak()}日連続</div>
-    <div class="hchip"><span class="em">📚</span>${answered} / ${ALL.length}問</div>
-  </div>
+  <header class="top"><h1>合格エンジン</h1><div class="days">本番 ${examDateStr()}<br>あと<b>${daysToExam()}</b>日</div></header>
   <div class="greet">${greet}。<br><span>今日も一歩ずつ。</span></div>
   ${urgentAdminHtml()}
   <div class="eyebrow" style="margin:2px 2px 8px">いま、これだけやればOK</div>
   <button class="${act.cls}" style="margin-bottom:16px" onclick="${act.fn}">${act.label}<small>${act.sub}</small></button>
+  <div class="card">
+    <div class="eyebrow">今日のペース</div>
+    <div class="pacerow">
+      <span class="pacebadge ${paceCls}">${paceIcon} ${paceLabel}</span>
+      <span class="pacequota">${unseen>0?`1日 ${perDay}問で全問マスター`:"あとは反復で定着！"}</span>
+    </div>
+    <div class="bar" style="margin-top:11px"><i style="width:${covPct}%"></i></div>
+    <div class="pacesub">全体カバー ${answered}/${ALL.length}問（${covPct}%）・ 今日 ${todayDone}問${unseen>0?(todayDone>=perDay?" ✓ ノルマ達成！":`（あと${Math.max(0,perDay-todayDone)}問）`):""}</div>
+  </div>
+  <div class="card" onclick="S.view='roadmap';render()" style="cursor:pointer">
+    <div class="eyebrow">合格ロードマップ</div>
+    ${phaseHtml()}
+    <div class="rmnow">📍 <b>今:</b> ${rmCur?esc(rmCur.label):"全ステップ完了 🎉"}</div>
+    ${rmNextHtml?`<div class="rmnext">${rmNextHtml}</div>`:""}
+    <div class="note" style="margin-top:10px">タップで全ロードマップを見る →</div>
+  </div>
+  <div class="statrow">
+    <div class="stat"><div class="v">${streak()}<span style="font-size:12px">日</span></div><div class="l">連続学習 🔥</div></div>
+    <div class="stat"><div class="v">${Object.keys(days).length}<span style="font-size:12px">日</span></div><div class="l">学習日数</div></div>
+    <div class="stat"><div class="v">${tot}<span style="font-size:12px">問</span></div><div class="l">累計解答</div></div>
+  </div>
+  <div style="height:14px"></div>
   <div class="card">
     <div class="eyebrow">いまの実力（予想得点）</div>
     <div class="ringwrap">
@@ -637,6 +680,7 @@ function homeView(){
     </div>
   </div>
   <button class="row" onclick="S.view='practice';render()"><div class="ic">✏️</div><div class="tx"><b>問題を解く</b><span>分野別・論点別・本番モード（50問）</span></div><div class="chev">›</div></button>
+  <button class="row" onclick="S.view='journey';render()"><div class="ic g">📊</div><div class="tx"><b>実績・データ</b><span>カレンダー・模試履歴・分野別の正答率・バックアップ</span></div><div class="chev">›</div></button>
   <div class="footer-note">出典: 日本貸金業協会 公式過去問 第16〜20回＋AI予想模試50問。解説・暗記カードはAI生成です。</div>`;
 }
 
@@ -848,7 +892,7 @@ function statsView(){
     .map(([k,v])=>`<tr><td><a href="#" onclick="startTopic('${k}');return false" style="color:var(--accent);text-decoration:none">${esc(k)}</a></td><td>${v.c}/${v.a}</td><td>${Math.round(100*v.c/v.a)}%</td></tr>`).join("");
   const hist2=examResults.map(e=>`<tr><td>${e.date}</td><td>第${e.exam}回</td><td>${e.score}点 ${e.score>=31?"✅":"❌"}</td></tr>`).join("");
   return `
-  <button class="back" onclick="S.view='journey';render()">← 記録へ</button>
+  <button class="back" onclick="S.view='journey';render()">← 実績へ</button>
   <div class="card"><h2>論点別正答率（低い順・タップで演習）</h2>
     ${rows?`<table class="res"><tr><th>論点</th><th>正解/回答</th><th>正答率</th></tr>${rows}</table>`:"<p class='note'>まだデータがありません。</p>"}</div>
   <div class="card"><h2>本番モード履歴</h2>
@@ -902,7 +946,7 @@ function bannerHtml(){
 function urgentAdminHtml(){
   const m=MILES.find(x=>!x.auto&&!mileDone(x)); if(!m) return "";
   const d=mileDays(m); if(d>14) return "";
-  return `<div class="banner" onclick="S.view='journey';render()" style="cursor:pointer"><div class="cap">⚠️ 忘れずに</div><div class="tt">${esc(m.label)}${d>=0?`（あと${d}日）`:"（期限超過）"}</div><div style="font-size:11.5px;color:var(--sub)">タップで記録を開く →</div></div>`;
+  return `<div class="banner" onclick="S.view='roadmap';render()" style="cursor:pointer"><div class="cap">⚠️ 忘れずに</div><div class="tt">${esc(m.label)}${d>=0?`（あと${d}日）`:"（期限超過）"}</div><div style="font-size:11.5px;color:var(--sub)">タップでロードマップを開く →</div></div>`;
 }
 function phaseHtml(){
   const t=new Date();
@@ -942,38 +986,9 @@ function journeyView(){
   const ts=topicStats();
   const weakTopics=Object.entries(ts).filter(([k,v])=>v.a>=3&&v.c/v.a<0.7).sort((x,y)=>x[1].c/x[1].a-y[1].c/y[1].a).slice(0,6);
   const th=store.get("theme","auto");
-  const nx=nextMileIdx(); const niIdx = nx<0?MILES.length:nx;
-  const milesHtml=MILES.map((m,i)=>{
-    const done=mileDone(m), d=mileDays(m), isNext=i===niIdx, locked=i>niIdx, auto=!!m.auto;
-    let dd;
-    if(done) dd = auto?`達成 ✓`:`完了 ✓`;
-    else if(m.read) dd = `物語を読むと達成`;
-    else if(auto) dd = `自動で判定中`;
-    else if(locked) dd = `前のステップを終えると解放されます`;
-    else dd = d>=0?`期限 ${m.due.slice(5).replace("-","/")}（あと${d}日）`:`<span class="over">期限超過（${m.due.slice(5).replace("-","/")}）</span>`;
-    const prog = (!done&&auto)?` ・ ${mileProgress(m)}`:"";
-    let chk;
-    if(auto) chk=`<div class="chk auto ${done?"done":""}">${done?"✓":(m.read?"📖":"⏳")}</div>`;
-    else if(locked) chk=`<div class="chk lock">🔒</div>`;
-    else chk=`<button class="chk" onclick="mileToggle('${m.id}')">${done?"✓":""}</button>`;
-    const link = (m.link&&isNext)?` ・ <a href="${m.link}" target="_blank" style="color:var(--accent)">申込ページ</a>`:"";
-    return `<div class="mile ${done?"done":""} ${locked&&!auto?"locked":""} ${isNext?"next":""}">
-      ${chk}
-      <div><div class="lb">${esc(m.label)}${isNext&&!done?' <span class="nowtag">今ここ</span>':""}</div>
-      <div class="dd ${!done&&!locked&&d<0?"over":""}">${dd}${prog}${m.desc?" ・ "+esc(m.desc):""}${link}</div>
-      ${isNext&&m.read&&!done?`<button class="btn primary" style="margin-top:8px" onclick="${m.openFn||"startIntro()"}">▶ ${m.id==="strategy"?"必勝法を読む":"物語を読む"}</button>`:""}</div>
-    </div>`; }).join("");
   return `
-  <header class="top"><h1>学習の記録</h1><div class="days">試験まで<br><b>${daysToExam()}</b>日</div></header>
-  <div class="card"><h2>受験までの道のり（試験まであと${daysToExam()}日）</h2>${phaseHtml()}
-    <div class="note">① 暗記カードと分野別演習で基礎 → ② 過去問を3周（やさしい解説で理解） → ③ 本番モードで仕上げ。参考書なし・このアプリだけで合格を目指せます。</div></div>
-  <div class="card"><h2>合格へのロードマップ</h2><div class="roadmap">${milesHtml}</div></div>
-  <div class="statrow">
-    <div class="stat"><div class="v">${streak()}<span style="font-size:12px">日</span></div><div class="l">連続学習 🔥</div></div>
-    <div class="stat"><div class="v">${studied}<span style="font-size:12px">日</span></div><div class="l">学習日数</div></div>
-    <div class="stat"><div class="v">${total}<span style="font-size:12px">問</span></div><div class="l">累計解答</div></div>
-  </div>
-  <div style="height:12px"></div>
+  <button class="back" onclick="S.view='home';render()">← ホーム</button>
+  <header class="top"><h1>実績・データ</h1><div class="days">本番 ${examDateStr()}<br>あと<b>${daysToExam()}</b>日</div></header>
   <div class="card"><h2>学習カレンダー（色が濃い日ほどたくさん解いた）</h2>${calHtml(S.calOff||0)}</div>
   <div class="card"><h2>模試の記録</h2>
     ${examResults.length? examResults.map(e=>`<div style="font-size:13px;padding:4px 0">${e.date} 第${e.exam}回 → <b>${e.score}点</b> ${e.score>=35?"🎉":e.score>=31?"✅":"💪"}</div>`).join("") : "<p class='note'>まだ模試記録なし。まずはクイック10問から始めて、9月に入ったら本番モードへ。</p>"}
@@ -997,6 +1012,41 @@ function journeyView(){
     <input type="file" id="impFile" accept=".json" style="display:none" onchange="importData(event)">
     <div class="note">学習履歴はこの端末のブラウザにのみ保存されます。端末を替えるときはバックアップを。</div>
   </div>`;
+}
+
+// ---------- 合格ロードマップ（独立画面） ----------
+const MILE_TIME={intro:"約3分",strategy:"約5分",apply:"約15分",basics:"約3時間",phase1:"約3時間",phase2:"約20時間",goal35:"1回2時間",ticket:"約5分",final:"約30分",exam:"本番2時間"};
+function roadmapView(){
+  const nx=nextMileIdx(); const niIdx = nx<0?MILES.length:nx;
+  const doneN=MILES.filter(mileDone).length;
+  const milesHtml=MILES.map((m,i)=>{
+    const done=mileDone(m), d=mileDays(m), isNext=i===niIdx, locked=i>niIdx, auto=!!m.auto;
+    let dd;
+    if(done) dd = auto?`達成 ✓`:`完了 ✓`;
+    else if(m.read) dd = `読むと達成`;
+    else if(auto) dd = `自動で判定中`;
+    else if(locked) dd = `前のステップを終えると解放されます`;
+    else dd = d>=0?`期限 ${m.due.slice(5).replace("-","/")}（あと${d}日）`:`<span class="over">期限超過（${m.due.slice(5).replace("-","/")}）</span>`;
+    const prog = (!done&&auto)?` ・ ${mileProgress(m)}`:"";
+    const tm = MILE_TIME[m.id]?`<span class="miletime">⏱ ${MILE_TIME[m.id]}</span>`:"";
+    let chk;
+    if(auto) chk=`<div class="chk auto ${done?"done":""}">${done?"✓":(m.read?"📖":"⏳")}</div>`;
+    else if(locked) chk=`<div class="chk lock">🔒</div>`;
+    else chk=`<button class="chk" onclick="mileToggle('${m.id}')">${done?"✓":""}</button>`;
+    const link = (m.link&&isNext)?` ・ <a href="${m.link}" target="_blank" style="color:var(--primary-ink)">申込ページ</a>`:"";
+    return `<div class="mile ${done?"done":""} ${locked&&!auto?"locked":""} ${isNext?"next":""}">
+      ${chk}
+      <div style="flex:1"><div class="lb">${esc(m.label)}${isNext&&!done?' <span class="nowtag">今ここ</span>':""} ${tm}</div>
+      <div class="dd ${!done&&!locked&&d<0?"over":""}">${dd}${prog}${m.desc?" ・ "+esc(m.desc):""}${link}</div>
+      ${isNext&&m.read&&!done?`<button class="btn primary" style="margin-top:8px" onclick="${m.openFn||"startIntro()"}">▶ ${m.id==="strategy"?"必勝法を読む":"物語を読む"}</button>`:""}</div>
+    </div>`; }).join("");
+  return `
+  <header class="top"><h1>合格ロードマップ</h1><div class="days">本番 ${examDateStr()}<br>あと<b>${daysToExam()}</b>日</div></header>
+  <div class="card"><div class="eyebrow">いまの段階</div>${phaseHtml()}
+    <div class="note">① 暗記カードと分野別演習で基礎 → ② 過去問を3周（やさしい解説で理解）→ ③ 本番モードで仕上げ。参考書なし・このアプリだけで合格を目指せます。</div></div>
+  <div class="card"><h2>ステップ（${doneN} / ${MILES.length} 達成）</h2>
+    <div class="roadmap">${milesHtml}</div>
+    <div class="note">上から順に進みます。緑は達成済み、「今ここ」が次にやること。⏱は所要時間の目安です。</div></div>`;
 }
 
 // ---------- 解法テクニック ----------
