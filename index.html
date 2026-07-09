@@ -376,21 +376,28 @@ select{width:100%;padding:13px 15px;border-radius:var(--radius-sm);border:none;b
 .nbacts{display:flex;gap:8px}
 .nbbtn{width:auto;padding:8px 13px;font-size:12.5px}
 
-/* 冒険コース（ゲームマップ） */
-.cworld{font-size:12px;font-weight:800;color:var(--primary-ink);text-align:center;margin:22px 0 8px}
-.coursewrap{display:flex;flex-direction:column;align-items:center}
-.cnode{position:relative;display:flex;flex-direction:column;align-items:center;margin-bottom:8px}
-.cnode::before{content:"";position:absolute;top:-18px;left:50%;transform:translateX(-50%);width:4px;height:20px;background:var(--line);border-radius:2px}
-.coursewrap .cnode:first-child::before{display:none}
-.cnode .circle{width:66px;height:66px;border-radius:50%;border:none;font-size:26px;cursor:pointer;background:var(--card);box-shadow:0 4px 0 var(--line), var(--shadow-sm);color:var(--ink);transition:transform .08s}
-.cnode .circle:active{transform:translateY(3px)}
-.cnode.done .circle{background:var(--ok);color:#fff;box-shadow:0 4px 0 var(--ok-strong)}
-.cnode.current .circle{background:var(--primary);color:#fff;box-shadow:0 4px 0 var(--primary-strong);animation:cpulse 1.5s ease-in-out infinite}
-@keyframes cpulse{0%,100%{transform:scale(1)}50%{transform:scale(1.09)}}
-.cnode.locked .circle{background:var(--bg-tint);color:var(--faint);box-shadow:0 4px 0 var(--line);cursor:not-allowed}
-.cnode.open .circle{box-shadow:0 4px 0 var(--line), inset 0 0 0 2px var(--primary-soft)}
-.cnode .clabel{font-size:10.5px;color:var(--sub);text-align:center;margin-top:5px;max-width:120px;line-height:1.3;font-weight:600}
-.cnode.current .clabel{color:var(--primary-ink);font-weight:800}
+/* 冒険コース（ゲームマップ・うねる一本道） */
+.cworld{display:flex;align-items:center;gap:9px;font-size:14px;font-weight:800;color:var(--wc,var(--primary-ink));margin:26px 4px 2px}
+.cworld .wnum{font-size:9.5px;font-weight:800;color:#fff;background:var(--wc,var(--primary));border-radius:999px;padding:3px 9px;letter-spacing:.04em;flex:none}
+.cworld .wttl{flex:1;min-width:0}
+.cworld .wprog{font-size:11px;font-weight:800;color:var(--sub)}
+.coursewrap{position:relative;margin:0 auto;max-width:480px}
+.croad{position:absolute;inset:0;z-index:0}
+.cnode{position:absolute;width:118px;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;z-index:1}
+.cnode .circle{width:70px;height:70px;border-radius:50%;border:none;font-size:28px;cursor:pointer;background:var(--card);box-shadow:0 5px 0 var(--line), var(--shadow-sm);color:var(--ink);transition:transform .08s}
+.cnode .circle:active{transform:translateY(4px)}
+.cnode.done .circle{background:var(--ok);color:#fff;box-shadow:0 5px 0 var(--ok-strong)}
+.cnode.current .circle{background:var(--wc,var(--primary));color:#fff;box-shadow:0 5px 0 rgba(0,0,0,.18)}
+.cnode.locked .circle{background:var(--bg-tint);color:var(--faint);box-shadow:0 5px 0 var(--line);cursor:not-allowed}
+.cnode.open .circle{box-shadow:0 5px 0 var(--line), inset 0 0 0 2.5px var(--wc,var(--primary))}
+.cnode .clabel{font-size:10.5px;color:var(--sub);text-align:center;margin-top:6px;line-height:1.3;font-weight:700}
+.cnode.current .clabel{color:var(--ink)}
+.cnode.locked .clabel{opacity:.55}
+.startbub{position:absolute;top:-28px;background:var(--wc,var(--primary));color:#fff;font-size:10.5px;font-weight:800;padding:3px 11px;border-radius:999px;box-shadow:var(--shadow-sm);animation:sbob 1.1s ease-in-out infinite;white-space:nowrap;letter-spacing:.04em}
+.startbub::after{content:"";position:absolute;left:50%;bottom:-4px;transform:translateX(-50%);border:5px solid transparent;border-top-color:var(--wc,var(--primary));border-bottom:0}
+@keyframes sbob{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+.cgoal{text-align:center;margin:18px 0 6px;font-size:46px}
+.cgoal div{font-size:14px;font-weight:800;color:var(--gold-ink);margin-top:2px}
 
 /* pace & roadmap-mini (home) */
 .pacerow{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
@@ -640,23 +647,38 @@ function courseSections(){
 }
 function courseView(){
   const secs=courseSections();
-  let flatN=0, doneN=0;
-  const blocks=secs.map(sec=>{
-    const nodes=sec.nodes.map(n=>{
-      flatN++; if(n.done)doneN++;
+  const STEP=118, R=34;
+  const WC=["var(--primary)","var(--teal)","var(--violet)","var(--gold)","var(--ok)","var(--ng)","var(--primary)","var(--teal)"];
+  let flatN=0, doneN=0; secs.forEach(s=>s.nodes.forEach(n=>{flatN++; if(n.done)doneN++;}));
+  const blocks=secs.map((sec,si)=>{
+    const N=sec.nodes.length, H=N*STEP, col=WC[si%WC.length];
+    const cleared=sec.nodes.filter(n=>n.done).length;
+    const pts=sec.nodes.map((n,i)=>({x:+(50+26*Math.sin(i*Math.PI/2)).toFixed(2), y:i*STEP+R+10}));
+    const d="M "+pts.map(p=>`${p.x} ${p.y}`).join(" L ");
+    const nodes=sec.nodes.map((n,i)=>{
       const cls=n.done?"done":n.current?"current":n.locked?"locked":"open";
       const face=n.done?(n.t==="quiz"?(n.stars?"⭐".repeat(n.stars):"✓"):"✓"):(n.locked?"🔒":n.ic);
-      return `<div class="cnode ${cls}">
-        <button class="circle" ${n.locked?"disabled":`onclick="${n.open}"`}>${face}</button>
-        <div class="clabel">${n.current?"▶ ":""}${esc(n.label)}</div>
+      const p=pts[i];
+      return `<div class="cnode ${cls}" style="left:${p.x}%;top:${p.y-R}px">
+        ${n.current?`<div class="startbub">START</div>`:""}
+        <button class="circle" style="--wc:${col}" ${n.locked?"disabled":`onclick="${n.open}"`}>${face}</button>
+        <div class="clabel">${esc(n.label)}</div>
       </div>`;
     }).join("");
-    return `<div class="cworld">${esc(sec.title)}</div><div class="coursewrap">${nodes}</div>`;
+    return `<div class="cworld" style="--wc:${col}"><span class="wnum">WORLD ${si+1}</span><span class="wttl">${esc((sec.title.split("・")[1]||sec.title).trim())}</span><span class="wprog">${cleared}/${N}</span></div>
+    <div class="coursewrap" style="height:${H}px">
+      <svg class="croad" viewBox="0 0 100 ${H}" preserveAspectRatio="none" width="100%" height="${H}" aria-hidden="true">
+        <path d="${d}" fill="none" stroke="var(--line)" stroke-width="15" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
+        <path d="${d}" fill="none" stroke="${col}" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="0.1 11" opacity=".55" vector-effect="non-scaling-stroke"/>
+      </svg>
+      ${nodes}
+    </div>`;
   }).join("");
   return `
-  <header class="top"><h1>冒険コース</h1><div class="days">クリア <b>${doneN}</b>/${flatN}</div></header>
-  <p class="note" style="margin:0 0 4px">上から順に制覇。まず物語で全体像→過去問ステージへ。緑はクリア、⭐は正答数（10問中9・7以上で増）。</p>
+  <header class="top"><h1>冒険コース</h1><div class="days">クリア<br><b>${doneN}</b>/${flatN}</div></header>
+  <p class="note" style="margin:0 0 4px">スタートから一本道。まず物語で全体像 → 過去問ステージを制覇して合格へ。⭐は正答数（10問中7・9以上で増）。</p>
   ${blocks}
+  <div class="cgoal">🏆<div>ゴール ・ 合格！</div></div>
   <div class="footer-note">自由に解きたいときは「問題」タブへ。受験手続きは<a href="#" onclick="S.view='roadmap';render();return false" style="color:var(--primary-ink);font-weight:700">ロードマップ</a>で確認できます。</div>`;
 }
 
