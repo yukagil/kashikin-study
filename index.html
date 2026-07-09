@@ -77,6 +77,8 @@
   }
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+button,input,select,textarea{font-family:inherit;font-size:inherit}
+button{color:inherit}
 html{-webkit-text-size-adjust:100%}
 body{font-family:"Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,system-ui,sans-serif;
   background:var(--bg);color:var(--ink);line-height:1.7;font-size:15px;
@@ -129,7 +131,7 @@ header.top .days b{color:var(--primary-ink);font-size:17px;font-variant-numeric:
 .intro-cta:active{box-shadow:0 0 0 var(--gold-strong)}
 .intro-cta small{opacity:.78}
 
-.row{display:flex;align-items:center;gap:13px;width:100%;border:none;background:var(--card);
+.row{display:flex;align-items:center;gap:13px;width:100%;border:none;background:var(--card);color:var(--ink);
   border-radius:var(--radius-sm);padding:14px;cursor:pointer;text-align:left;box-shadow:var(--shadow-sm);border:1px solid var(--hairline);
   margin-bottom:10px;transition:transform .06s}
 .row:active{transform:scale(.99)}
@@ -456,8 +458,8 @@ function introView(){
     <div class="ibody">${glossify(esc(ch.body).replace(/\n/g,"<br>"))}</div>
   </div>
   <div class="navbtns">
-    ${i>0?`<button class="btn ghost" style="flex:none;padding-left:18px;padding-right:18px" onclick="introGo(-1)">←</button>`:""}
-    ${last?`<button class="cta ok" style="flex:1" onclick="finishIntro()">読み終わった！学習をはじめる 🚀</button>`:`<button class="cta" style="flex:1" onclick="introGo(1)">次の章へ →</button>`}
+    ${i>0?`<button class="btn ghost" style="flex:0 0 auto;width:auto;padding-left:22px;padding-right:22px" onclick="introGo(-1)">←</button>`:""}
+    ${last?`<button class="cta ok" style="flex:1 1 auto" onclick="finishIntro()">読み終わった！学習をはじめる 🚀</button>`:`<button class="cta" style="flex:1 1 auto" onclick="introGo(1)">次の章へ →</button>`}
   </div>
   <div class="tiphint" style="text-align:center;margin-top:12px">青い点線の用語はタップすると意味が出ます</div>`;
 }
