@@ -343,6 +343,39 @@ select{width:100%;padding:13px 15px;border-radius:var(--radius-sm);border:none;b
 .exq{font-size:14px;line-height:1.85}
 .expt{font-size:12.5px;color:var(--sub);margin-top:9px;font-weight:700}
 
+/* score trend sparkline */
+.trend{margin-top:14px;border-top:1px solid var(--hairline);padding-top:12px}
+.trendcap{font-size:11px;color:var(--sub);text-align:center;margin-top:4px}
+/* daily-goal celebration */
+.celebrate{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;background:rgba(10,14,28,.55);animation:fade .2s ease}
+.confbox{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+.conf{position:absolute;top:-14px;width:10px;height:14px;border-radius:2px;opacity:.9;animation:conffall linear forwards}
+@keyframes conffall{0%{transform:translateY(-20px) rotate(0)}100%{transform:translateY(102vh) rotate(720deg)}}
+.celcard{position:relative;background:var(--card);border-radius:22px;padding:28px 24px;text-align:center;max-width:320px;width:86%;box-shadow:var(--shadow-lg);animation:tipup .3s cubic-bezier(.2,.8,.2,1)}
+.celemoji{font-size:60px;line-height:1}
+.celtt{font-size:22px;font-weight:800;margin-top:10px;letter-spacing:-.01em}
+.celsub{font-size:13px;color:var(--sub);margin-top:6px}
+/* toast */
+.toast{position:fixed;left:50%;bottom:calc(78px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:210;background:var(--ink);color:var(--bg);font-size:13.5px;font-weight:700;padding:11px 18px;border-radius:999px;box-shadow:var(--shadow-lg);animation:toastin .3s cubic-bezier(.2,.8,.2,1);max-width:90%}
+.toast.hide{animation:toastout .4s ease forwards}
+.toast b{color:var(--bg)}
+@keyframes toastin{from{opacity:0;transform:translate(-50%,12px)}to{opacity:1;transform:translate(-50%,0)}}
+@keyframes toastout{to{opacity:0;transform:translate(-50%,12px)}}
+/* badges */
+.badgegrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.badge{background:var(--bg-tint);border-radius:14px;padding:13px 8px;text-align:center;opacity:.55}
+.badge.got{opacity:1;background:var(--primary-soft)}
+.badge .bic{font-size:28px;line-height:1}
+.badge .bnm{font-size:12px;font-weight:800;margin-top:5px}
+.badge .bds{font-size:10px;color:var(--sub);margin-top:2px;line-height:1.4}
+/* mistake notebook */
+.nbitem{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 0;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.nbitem:last-child{border-bottom:none}
+.nbtopic{font-size:14px;font-weight:700;flex:1;min-width:140px}
+.nbmeta{display:block;font-size:11px;color:var(--sub);font-weight:500;margin-top:2px}
+.nbacts{display:flex;gap:8px}
+.nbbtn{width:auto;padding:8px 13px;font-size:12.5px}
+
 /* pace & roadmap-mini (home) */
 .pacerow{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
 .pacebadge{font-size:13px;font-weight:800;border-radius:999px;padding:5px 13px}
@@ -387,8 +420,15 @@ let chist = store.get("chist",{});          // cardId -> {a,c,w,t,iv,due}
 let examResults = store.get("examResults",[]);
 let days = store.get("days",{});            // "YYYY-MM-DD" -> 解答数（学習カレンダー用）
 let miles = store.get("miles",{});          // milestoneId -> 完了日時
-const STORE_VERSION = 3;
-const save = ()=>{ store.set("hist",hist); store.set("chist",chist); store.set("examResults",examResults); store.set("days",days); store.set("miles",miles); store.set("ver",STORE_VERSION); };
+let scoreHist = store.get("scoreHist",{});  // "YYYY-MM-DD" -> 予想得点（推移グラフ用）
+let mastered = store.get("mastered",{});    // qid -> true（間違いノートで「覚えた」）
+let badges = store.get("badges",{});        // badgeId -> 獲得日
+let frozen = store.get("frozen",{});        // "YYYY-MM-DD" -> true（ストリーク保護で凍結した日）
+let freezes = store.get("freezes",2);       // 残ストリークフリーズ数
+let freezeGranted = store.get("freezeGranted",0);
+let celebrated = store.get("celebrated","");// 最後に目標達成演出を出した日
+const STORE_VERSION = 4;
+const save = ()=>{ store.set("hist",hist); store.set("chist",chist); store.set("examResults",examResults); store.set("days",days); store.set("miles",miles); store.set("scoreHist",scoreHist); store.set("mastered",mastered); store.set("badges",badges); store.set("frozen",frozen); store.set("freezes",freezes); store.set("freezeGranted",freezeGranted); store.set("celebrated",celebrated); store.set("ver",STORE_VERSION); };
 // 表示テーマ（自動/ライト/ダーク）
 function applyTheme(){
   const t=store.get("theme","auto"); const r=document.documentElement;
@@ -465,7 +505,7 @@ const INTRO=[
 ];
 function startIntro(){ S.introCh=0; S.view="intro"; render(); }
 function introGo(d){ S.introCh=Math.max(0,Math.min(INTRO.length-1,(S.introCh||0)+d)); render(); window.scrollTo(0,0); }
-function finishIntro(){ store.set("introRead",true); S.view="practice"; render(); setTimeout(()=>alert("よくできました！全体像はバッチリ。さっそく学習をはじめよう 🎉"),50); }
+function finishIntro(){ store.set("introRead",true); S.view="practice"; render(); checkBadges(); setTimeout(()=>alert("よくできました！全体像はバッチリ。さっそく学習をはじめよう 🎉"),50); }
 function introView(){
   const i=S.introCh||0, ch=INTRO[i], last=i===INTRO.length-1;
   const dots=INTRO.map((c,ix)=>`<span class="idot ${ix===i?"on":ix<i?"past":""}"></span>`).join("");
@@ -495,7 +535,7 @@ const STRATEGY=[
 ];
 function startStrategy(){ S.stratCh=0; S.view="strategy"; render(); }
 function stratGo(d){ S.stratCh=Math.max(0,Math.min(STRATEGY.length-1,(S.stratCh||0)+d)); render(); window.scrollTo(0,0); }
-function finishStrategy(){ store.set("strategyRead",true); S.view="practice"; render(); setTimeout(()=>alert("必勝法、身につきました！あとは言われた通り進めるだけ 💪"),50); }
+function finishStrategy(){ store.set("strategyRead",true); S.view="practice"; render(); checkBadges(); setTimeout(()=>alert("必勝法、身につきました！あとは言われた通り進めるだけ 💪"),50); }
 function strategyView(){
   const i=S.stratCh||0, ch=STRATEGY[i], last=i===STRATEGY.length-1;
   const dots=STRATEGY.map((c,ix)=>`<span class="idot ${ix===i?"on":ix<i?"past":""}"></span>`).join("");
@@ -585,6 +625,86 @@ function predictScore(){
   return {score:Math.round(sum), dataless};
 }
 
+// ---------- 予想得点の推移・目標達成・バッジ・ストリーク保護・間違いノート ----------
+function todayStr(){ return new Date().toISOString().slice(0,10); }
+function recordScore(){ const tot=Object.values(hist).reduce((s,h)=>s+(h.a||0),0); if(!tot) return; scoreHist[todayStr()]=predictScore().score; }
+function scoreTrendSvg(big){
+  const ks=Object.keys(scoreHist).sort(); const pts=ks.slice(-30).map(k=>scoreHist[k]);
+  if(pts.length<2) return "";
+  const w=big?540:260, h=big?130:48, pad=big?16:4, max=50, min=0;
+  const X=i=>pad+(pts.length===1?0:i/(pts.length-1))*(w-2*pad);
+  const Y=v=>h-pad-(v-min)/(max-min)*(h-2*pad);
+  const line=pts.map((v,i)=>`${X(i).toFixed(1)},${Y(v).toFixed(1)}`).join(" ");
+  const area=`${pad},${(h-pad).toFixed(1)} ${line} ${(w-pad).toFixed(1)},${(h-pad).toFixed(1)}`;
+  const passY=Y(31).toFixed(1); const last=pts[pts.length-1];
+  return `<svg viewBox="0 0 ${w} ${h}" width="100%" height="${h}" preserveAspectRatio="none" style="display:block;overflow:visible">
+    ${big?`<line x1="${pad}" y1="${passY}" x2="${w-pad}" y2="${passY}" stroke="var(--ok)" stroke-width="1" stroke-dasharray="4 4" opacity=".7"/>`:""}
+    <polygon points="${area}" fill="var(--primary)" opacity="0.10"/>
+    <polyline points="${line}" fill="none" stroke="var(--primary)" stroke-width="${big?2.5:2}" stroke-linejoin="round" stroke-linecap="round"/>
+    <circle cx="${X(pts.length-1).toFixed(1)}" cy="${Y(last).toFixed(1)}" r="${big?4:3}" fill="var(--primary)"/>
+  </svg>`;
+}
+function dailyGoal(){ const unseen=ALL.length-Object.values(hist).filter(h=>h.a).length; const coverDays=Math.max(1,daysToExam()-21); return Math.max(1,Math.ceil(unseen/coverDays)); }
+function maybeCelebrate(){ const g=dailyGoal(); const t=todayStr(); const done=days[t]||0; if(g>0 && done>=g && celebrated!==t){ celebrated=t; save(); celebrate(g,done); } }
+function celebrate(goal,done){
+  if(document.querySelector(".celebrate")) return;
+  const wrap=document.createElement("div"); wrap.className="celebrate";
+  const cols=["#3b5bdb","#f0a512","#12a150","#e5484d","#7c5cfc"]; let conf="";
+  for(let i=0;i<54;i++){ conf+=`<span class="conf" style="left:${(i/54*100).toFixed(1)}%;background:${cols[i%5]};animation-delay:${(i%10/12).toFixed(2)}s;animation-duration:${(1.7+(i%7)/6).toFixed(2)}s"></span>`; }
+  wrap.innerHTML=`<div class="confbox">${conf}</div><div class="celcard"><div class="celemoji">🎉</div><div class="celtt">今日の目標達成！</div><div class="celsub">${done}問クリア（目標${goal}問）・ 連続 ${streak()}日 🔥</div><button class="cta ok" style="margin-top:18px" onclick="this.closest('.celebrate').remove()">よし、続ける！</button></div>`;
+  wrap.onclick=(e)=>{ if(e.target===wrap) wrap.remove(); };
+  document.body.appendChild(wrap);
+}
+function toast(msg){ const t=document.createElement("div"); t.className="toast"; t.innerHTML=msg; document.body.appendChild(t); setTimeout(()=>{ t.classList.add("hide"); setTimeout(()=>t.remove(),400); },2600); }
+const BADGES=[
+ {id:"first",ic:"🌱",name:"はじめの一歩",desc:"最初の1問に解答",test:()=>Object.values(hist).some(h=>h.a)},
+ {id:"story",ic:"📖",name:"物語読破",desc:"はじめの物語を読了",test:()=>store.get("introRead",false)},
+ {id:"strat",ic:"🧠",name:"必勝法マスター",desc:"必勝法を読了",test:()=>store.get("strategyRead",false)},
+ {id:"streak3",ic:"🔥",name:"3日連続",desc:"3日つづけて学習",test:()=>streak()>=3},
+ {id:"streak7",ic:"⚡",name:"7日連続",desc:"1週間つづけて学習",test:()=>streak()>=7},
+ {id:"cover100",ic:"📚",name:"100問踏破",desc:"100問に着手",test:()=>Object.values(hist).filter(h=>h.a).length>=100},
+ {id:"coverAll",ic:"🗺️",name:"全問カバー",desc:"300問すべてに着手",test:()=>Object.values(hist).filter(h=>h.a).length>=ALL.length},
+ {id:"cardsAll",ic:"🃏",name:"カード全周",desc:"暗記カードを1周",test:()=>CARDS.length>0&&CARDS.every(c=>chist[c.id]&&chist[c.id].a)},
+ {id:"passzone",ic:"🎯",name:"合格圏突入",desc:"予想得点が31点に",test:()=>predictScore().score>=31},
+ {id:"safezone",ic:"💎",name:"安全圏",desc:"予想得点が35点に",test:()=>predictScore().score>=35},
+ {id:"examPass",ic:"🏆",name:"模試で合格",desc:"本番モードで31点以上",test:()=>examResults.some(e=>e.score>=31)},
+ {id:"catmaster",ic:"👑",name:"分野マスター",desc:"どこかの分野で正答率80%",test:()=>{const cs=catStats();return CATS.some(c=>cs[c].a>=10&&cs[c].c/cs[c].a>=0.8);}},
+];
+function checkBadges(silent){ let newly=[]; BADGES.forEach(b=>{ if(!badges[b.id]&&b.test()){ badges[b.id]=todayStr(); newly.push(b);} }); if(newly.length){ save(); if(!silent) newly.forEach((b,i)=>setTimeout(()=>toast(`🏅 バッジ獲得！ ${b.ic} <b>${esc(b.name)}</b>`),i*450)); } }
+function updateStreakFreeze(){
+  const dayKeys=Object.keys(days); const entitled=Math.floor(dayKeys.length/7);
+  if(entitled>freezeGranted){ freezes=Math.min(5, freezes+(entitled-freezeGranted)); freezeGranted=entitled; }
+  const all=dayKeys.concat(Object.keys(frozen));
+  if(all.length){
+    const last=all.sort().pop();
+    const todayU=Date.parse(todayStr()+"T00:00:00Z"), lastU=Date.parse(last+"T00:00:00Z");
+    const gaps=[];
+    for(let t=todayU-864e5; t>lastU; t-=864e5){ const k=new Date(t).toISOString().slice(0,10); if(!days[k]&&!frozen[k]) gaps.push(k); }
+    for(const k of gaps){ if(freezes>0){ frozen[k]=true; freezes--; } else break; }
+  }
+  save();
+}
+function mistakeList(){ return ALL.filter(q=>{ const h=hist[q.id]; return h&&h.a>0 && !mastered[q.id] && (h.w || h.c/h.a<0.6); }); }
+function masterQ(id){ mastered[id]=true; save(); render(); }
+function notebookView(){
+  const list=mistakeList();
+  const rows=list.map(q=>{ const h=hist[q.id]; const pct=Math.round(100*(h.c||0)/h.a);
+    return `<div class="nbitem">
+      <div class="nbtopic">${esc(q.topic||CATSHORT[q.category])}<span class="nbmeta">第${q.exam}回 問${q.no} ・ 正答率${pct}%</span></div>
+      <div class="nbacts">
+        <button class="btn ghost nbbtn" onclick='startSession(["${q.id}"],"drill")'>解き直す</button>
+        <button class="btn ghost nbbtn" onclick="masterQ('${q.id}')">覚えた✓</button>
+      </div>
+    </div>`; }).join("");
+  return `
+  <button class="back" onclick="S.view='practice';render()">← 問題へ</button>
+  <header class="top"><h1>間違いノート</h1><div class="days">本番 ${examDateStr()}<br>あと<b>${daysToExam()}</b>日</div></header>
+  ${list.length?`<button class="cta" style="margin-bottom:14px" onclick='startSession(${JSON.stringify(list.map(q=>q.id))},"drill")'>⏱ ${list.length}問をまとめて解き直す</button>
+  <div class="card"><h2>克服したい ${list.length}問</h2>${rows}</div>
+  <div class="note" style="text-align:center">「覚えた✓」で一覧から外れます。もう一度間違えると自動で戻ります。</div>`
+  :`<div class="card center"><div style="font-size:46px">🎉</div><h2 style="margin-top:10px">間違いノートは空です</h2><p class="note">今のところ克服できていないニガテはありません。この調子！</p></div>`}`;
+}
+
 // ---------- state ----------
 let S = { view:"home", session:null, cardSession:null, lastExam:null };
 
@@ -594,7 +714,7 @@ function render(){
   const v=S.view;
   el.innerHTML = v==="home"?homeView(): v==="intro"?introView(): v==="strategy"?strategyView(): v==="practice"?practiceView(): v==="quiz"?quizView(): v==="examResult"?examResultView():
                  v==="stats"?statsView(): v==="cards"?cardsView(): v==="cardPick"?cardPickView():
-                 v==="journey"?journeyView(): v==="roadmap"?roadmapView(): v==="tech"?techView(): v==="glossary"?glossaryView():"";
+                 v==="journey"?journeyView(): v==="roadmap"?roadmapView(): v==="notebook"?notebookView(): v==="tech"?techView(): v==="glossary"?glossaryView():"";
   renderTabbar();
   window.scrollTo(0,0);
 }
@@ -602,7 +722,7 @@ const TABS=[["home","🏠","ホーム"],["practice","✏️","問題"],["glossar
 function currentTab(){ const v=S.view;
   if(v==="glossary")return "glossary";
   if(v==="roadmap")return "roadmap";
-  if(v==="practice"||v==="quiz"||v==="examResult"||v==="cards"||v==="cardPick"||v==="tech")return "practice";
+  if(v==="practice"||v==="quiz"||v==="examResult"||v==="cards"||v==="cardPick"||v==="tech"||v==="notebook")return "practice";
   return "home"; }
 function tabGo(t){ clearInterval(timerHandle); S.session=null; S.cardSession=null; S.view=t; render(); }
 function renderTabbar(){
@@ -663,7 +783,7 @@ function homeView(){
     <div class="note" style="margin-top:10px">タップで全ロードマップを見る →</div>
   </div>
   <div class="statrow">
-    <div class="stat"><div class="v">${streak()}<span style="font-size:12px">日</span></div><div class="l">連続学習 🔥</div></div>
+    <div class="stat"><div class="v">${streak()}<span style="font-size:12px">日</span></div><div class="l">連続 🔥${freezes>0?` ・❄️${freezes}`:""}</div></div>
     <div class="stat"><div class="v">${Object.keys(days).length}<span style="font-size:12px">日</span></div><div class="l">学習日数</div></div>
     <div class="stat"><div class="v">${tot}<span style="font-size:12px">問</span></div><div class="l">累計解答</div></div>
   </div>
@@ -678,6 +798,7 @@ function homeView(){
         ${tot?(pred.score>=31?'<span class="tagpass">合格圏内 🎉</span>':`<span class="tagmid">合格圏まであと${31-pred.score}点</span>`):""}
       </div>
     </div>
+    ${scoreTrendSvg(false)?`<div class="trend">${scoreTrendSvg(false)}<div class="trendcap">予想得点の推移（直近${Math.min(30,Object.keys(scoreHist).length)}回）</div></div>`:""}
   </div>
   <button class="row" onclick="S.view='practice';render()"><div class="ic">✏️</div><div class="tx"><b>問題を解く</b><span>分野別・論点別・本番モード（50問）</span></div><div class="chev">›</div></button>
   <button class="row" onclick="S.view='journey';render()"><div class="ic g">📊</div><div class="tx"><b>実績・データ</b><span>カレンダー・模試履歴・分野別の正答率・バックアップ</span></div><div class="chev">›</div></button>
@@ -703,6 +824,7 @@ function practiceView(){
   <div class="card"><h2>本番モード（50問・120分・採点つき）</h2>
     <div class="grid2">${DATA.exams.map(e=>`<button class="btn ghost" onclick="startExam(${e.exam})">第${e.exam}回（${e.year}）${examBadge(e.exam)}</button>`).join("")}</div>
   </div>
+  <button class="row" onclick="S.view='notebook';render()"><div class="ic w">📕</div><div class="tx"><b>間違いノート</b><span>${mistakeList().length}問のニガテを集中復習・「覚えた」で卒業</span></div><div class="chev">›</div></button>
   <button class="row" onclick="S.view='cardPick';render()"><div class="ic p">🧠</div><div class="tx"><b>暗記カード</b><span>全${CARDS.length}枚・○×で論点の要点を高速固め</span></div><div class="chev">›</div></button>
   <button class="row" onclick="S.view='tech';render()"><div class="ic g">🎓</div><div class="tx"><b>解法テクニック</b><span>4択の絞り込み方・時間配分・ひっかけ対策</span></div><div class="chev">›</div></button>
   <button class="row" onclick="S.view='glossary';render()"><div class="ic w">📚</div><div class="tx"><b>用語集（全${Object.keys(GLOSSARY).length}語）</b><span>専門用語をやさしく解説・検索</span></div><div class="chev">›</div></button>`;
@@ -761,7 +883,7 @@ function quizView(){
   <div class="bar" style="margin-bottom:12px"><i style="width:${100*ss.i/ss.qids.length}%"></i></div>
   <div class="card">
     <div class="qmeta"><span>第${q.exam}回（${q.year}）問${q.no}</span><span>${esc(q.topic)||CATSHORT[q.category]}</span>${histBadge(q)}</div>
-    <div class="qtext">${md(q.text)}</div>
+    <div class="qtext">${glossify(md(q.text))}</div>
     ${(()=>{const th=techHints(q); return th.length&&!isExam? `<details style="margin-top:10px"><summary style="cursor:pointer;font-size:12.5px;color:var(--purple);font-weight:700">🎓 この問題で使える技（${th.length}）</summary><div class="summ" style="margin-top:8px">${th.map(x=>`<p style="margin-bottom:6px;font-size:12.5px">・${x}</p>`).join("")}</div></details>`:"";})()}
     <div class="choices">${choiceHtml}</div>
     ${fb}
@@ -779,7 +901,11 @@ function answer(n){
   if(ss.mode==="exam"){ ss.answers[q.id]=n; render(); return; }
   if(ss.answers[q.id]) return;
   ss.answers[q.id]=n;
-  const h=hist[q.id]||{}; srsUpdate(h,n===q.answer); hist[q.id]=h; save(); render();
+  const ok=n===q.answer;
+  const h=hist[q.id]||{}; srsUpdate(h,ok); hist[q.id]=h;
+  if(!ok) delete mastered[q.id];
+  recordScore(); save(); render();
+  maybeCelebrate(); checkBadges();
 }
 function move(d){ S.session.i=Math.min(Math.max(0,S.session.i+d),S.session.qids.length-1); render(); }
 function jump(ix){ S.session.i=ix; render(); }
@@ -807,9 +933,10 @@ function finishExam(){
     cat[q.category].n++; if(ok){score++;cat[q.category].c++;}
     const h=hist[id]||{}; srsUpdate(h,ok); hist[id]=h; });
   examResults.push({exam:ss.examNo,score,date:new Date().toISOString().slice(0,10)});
-  save();
+  recordScore(); save();
   S.lastExam={score,cat,examNo:ss.examNo,qids:ss.qids,answers:ss.answers};
   S.session=null; S.view="examResult"; render();
+  checkBadges();
 }
 function examResultView(){
   const r=S.lastExam,pass=r.score>=31;
@@ -878,6 +1005,7 @@ function cardAnswer(v){
   cs.answered=v; cs.revealed=true;
   const ok=v===c.o; if(ok)cs.right++;
   const h=chist[c.id]||{}; srsUpdate(h,ok); chist[c.id]=h; save(); render();
+  maybeCelebrate(); checkBadges();
 }
 function nextCard(){
   const cs=S.cardSession;
@@ -957,8 +1085,9 @@ function phaseHtml(){
 }
 function streak(){
   let s=0; const d=new Date();
-  if(!days[d.toISOString().slice(0,10)]) d.setDate(d.getDate()-1);
-  while(days[d.toISOString().slice(0,10)]){ s++; d.setDate(d.getDate()-1); }
+  const act=k=>days[k]||frozen[k];
+  if(!act(d.toISOString().slice(0,10))) d.setDate(d.getDate()-1);
+  while(act(d.toISOString().slice(0,10))){ s++; d.setDate(d.getDate()-1); }
   return s;
 }
 function calHtml(off){
@@ -989,6 +1118,9 @@ function journeyView(){
   return `
   <button class="back" onclick="S.view='home';render()">← ホーム</button>
   <header class="top"><h1>実績・データ</h1><div class="days">本番 ${examDateStr()}<br>あと<b>${daysToExam()}</b>日</div></header>
+  <div class="card"><h2>予想得点の推移</h2>${scoreTrendSvg(true)?`${scoreTrendSvg(true)}<div class="note">点線は合格圏（31点）。右肩上がりを目指そう。</div>`:"<p class='note'>2回以上解くと、得点の伸びがグラフで見られます。</p>"}</div>
+  <div class="card"><h2>バッジ（${Object.keys(badges).length} / ${BADGES.length}）</h2>
+    <div class="badgegrid">${BADGES.map(b=>{const got=badges[b.id];return `<div class="badge ${got?"got":""}"><div class="bic">${got?b.ic:"🔒"}</div><div class="bnm">${esc(b.name)}</div><div class="bds">${esc(b.desc)}</div></div>`;}).join("")}</div></div>
   <div class="card"><h2>学習カレンダー（色が濃い日ほどたくさん解いた）</h2>${calHtml(S.calOff||0)}</div>
   <div class="card"><h2>模試の記録</h2>
     ${examResults.length? examResults.map(e=>`<div style="font-size:13px;padding:4px 0">${e.date} 第${e.exam}回 → <b>${e.score}点</b> ${e.score>=35?"🎉":e.score>=31?"✅":"💪"}</div>`).join("") : "<p class='note'>まだ模試記録なし。まずはクイック10問から始めて、9月に入ったら本番モードへ。</p>"}
@@ -1099,7 +1231,7 @@ function fallbackCopy(t,done){
 
 // ---------- backup ----------
 function exportData(){
-  const blob=new Blob([JSON.stringify({v:STORE_VERSION,hist,chist,examResults,days,miles,exported:new Date().toISOString()})],{type:"application/json"});
+  const blob=new Blob([JSON.stringify({v:STORE_VERSION,hist,chist,examResults,days,miles,scoreHist,mastered,badges,frozen,freezes,freezeGranted,exported:new Date().toISOString()})],{type:"application/json"});
   const a=document.createElement("a"); a.href=URL.createObjectURL(blob);
   a.download=`kashikin_backup_${new Date().toISOString().slice(0,10)}.json`; a.click();
 }
@@ -1110,6 +1242,8 @@ function importData(ev){
       if(!d.hist) throw 0;
       hist=d.hist; chist=d.chist||{}; examResults=d.examResults||[];
       if(d.days) days=d.days; if(d.miles) miles=d.miles;
+      if(d.scoreHist) scoreHist=d.scoreHist; if(d.mastered) mastered=d.mastered; if(d.badges) badges=d.badges;
+      if(d.frozen) frozen=d.frozen; if(typeof d.freezes==="number") freezes=d.freezes; if(typeof d.freezeGranted==="number") freezeGranted=d.freezeGranted;
       save(); migrateStore();
       alert("復元しました（学習履歴・連続日数・やることを含む）"); S.view="home"; render();
     }catch(e){ alert("ファイルを読み込めませんでした"); } };
@@ -1118,6 +1252,8 @@ function importData(ev){
 
 applyTheme();
 migrateStore();
+updateStreakFreeze();
+checkBadges(true);
 render();
 </script>
 <script>
