@@ -661,40 +661,7 @@ function courseSections(){
   flat.forEach((n,i)=>{ n.locked=i>fo; n.current=i===fo; });
   return secs;
 }
-const CWMETA=[["#46a758","🌳"],["#e0a015","🏯"],["#2f8f5b","🌲"],["#2aa7d8","🏡"],["#8b5cf6","🏰"]];
-function enterWorld(si){
-  if(si<0){ const secs=courseSections(); let idx=0; secs.forEach((s,i)=>{ if(s.nodes.some(n=>n.current)) idx=i; }); si=idx; }
-  S.view="coursemap"; S.scrollWorld=si; render();
-}
-function courseView(){ // 科目セレクト（全体像）
-  const secs=courseSections();
-  let flatN=0, doneN=0; secs.forEach(s=>s.nodes.forEach(n=>{flatN++; if(n.done)doneN++;}));
-  const cards=secs.map((sec,si)=>{
-    const total=sec.nodes.length, cl=sec.nodes.filter(n=>n.done).length;
-    const first=sec.nodes[0], pct=Math.round(cl/total*100);
-    const state = cl===total?"done" : (!first.locked?"open":"locked");
-    const tag = state==="done"?'<span class="wstag done">読了 ✓</span>' : state==="locked"?'<span class="wstag lock">🔒</span>' : '<span class="wstag go">▶ 読む</span>';
-    return `<button class="wscard ${state}" style="--wc:${sec.col}" ${state==="locked"?"disabled":`onclick="enterWorld(${si})"`}>
-      <div class="wsic">${sec.ic}</div>
-      <div class="wsmid">
-        <div class="wshd"><span class="wssub">${esc(sec.sub)}</span>${tag}</div>
-        <div class="wsttl">${esc(sec.name)}</div>
-        <div class="bar"><i style="width:${pct}%"></i></div>
-        <div class="wsprog">${cl} / ${total} 話</div>
-      </div>
-    </button>`;
-  }).join("");
-  const allPct=Math.round(doneN/flatN*100);
-  return `
-  <header class="top"><h1>学習コース</h1><div class="days">読了<br><b>${doneN}</b>/${flatN}</div></header>
-  <div class="card"><div class="eyebrow">物語を一周（全${flatN}話）</div>
-    <div class="bar" style="height:12px"><i style="width:${allPct}%"></i></div>
-    <div class="note" style="margin-top:8px">まず物語で全体像を一周。読み終えたら「問題」タブでくり返し演習しよう（周回するほど力がつきます）。</div></div>
-  <button class="cta" style="margin-bottom:14px" onclick="enterWorld(-1)">▶ 続きから読む</button>
-  ${cards}
-  <button class="cta ok" style="margin-top:6px" onclick="S.view='practice';render()">✏️ 問題でひたすら演習する</button>`;
-}
-function courseMapView(){
+function courseView(){
   const secs=courseSections();
   let flatN=0, doneN=0; secs.forEach(s=>s.nodes.forEach(n=>{flatN++; if(n.done)doneN++;}));
   const blocks=secs.map((sec,si)=>{
@@ -713,8 +680,8 @@ function courseMapView(){
     <div class="cgrid">${tiles}</div>`;
   }).join("");
   return `
-  <button class="back" onclick="S.view='course';render()">← 科目えらび</button>
   <header class="top"><h1>学習コース</h1><div class="days">読了<br><b>${doneN}</b>/${flatN}</div></header>
+  <div class="bar" style="height:10px;margin:0 2px 6px"><i style="width:${flatN?Math.round(doneN/flatN*100):0}%"></i></div>
   <p class="note" style="margin:0 0 4px">物語を上から一周。これで全体像がつかめます。用語は青い点線タップ。</p>
   ${blocks}
   <div class="card center" style="margin-top:16px"><div style="font-size:34px">🎓</div><div style="font-weight:800;margin-top:4px">一周おつかれさま！</div><p class="note">ここからは「問題」でくり返し演習。周回するほど力がつきます。</p><button class="cta" style="margin-top:10px" onclick="S.view='practice';render()">✏️ 問題でひたすら演習する</button></div>`;
@@ -881,14 +848,13 @@ function render(){
   const v=S.view;
   el.innerHTML = v==="home"?homeView(): v==="intro"?introView(): v==="strategy"?strategyView(): v==="practice"?practiceView(): v==="quiz"?quizView(): v==="examResult"?examResultView():
                  v==="stats"?statsView(): v==="cards"?cardsView(): v==="cardPick"?cardPickView():
-                 v==="journey"?journeyView(): v==="roadmap"?roadmapView(): v==="course"?courseView(): v==="coursemap"?courseMapView(): v==="notebook"?notebookView(): v==="storylib"?storyLibView(): v==="story"?storyView(): v==="tech"?techView(): v==="glossary"?glossaryView():"";
+                 v==="journey"?journeyView(): v==="roadmap"?roadmapView(): v==="course"?courseView(): v==="notebook"?notebookView(): v==="storylib"?storyLibView(): v==="story"?storyView(): v==="tech"?techView(): v==="glossary"?glossaryView():"";
   renderTabbar();
   window.scrollTo(0,0);
-  if(v==="coursemap"&&S.scrollWorld!=null){ const el=document.getElementById("cw-"+S.scrollWorld); if(el) setTimeout(()=>el.scrollIntoView({block:"start"}),0); S.scrollWorld=null; }
 }
 const TABS=[["home","🏠","ホーム"],["course","🗺","コース"],["practice","✏️","問題"],["journey","📊","記録"]];
 function currentTab(){ const v=S.view;
-  if(v==="course"||v==="coursemap")return "course";
+  if(v==="course")return "course";
   if(v==="journey"||v==="records"||v==="stats"||v==="roadmap")return "journey";
   if(v==="practice"||v==="quiz"||v==="examResult"||v==="cards"||v==="cardPick"||v==="tech"||v==="notebook"||v==="storylib"||v==="story"||v==="glossary")return "practice";
   return "home"; }
